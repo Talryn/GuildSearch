@@ -1,0 +1,15 @@
+## Interface: 30300
+## Title: Guild Search
+## Notes: A UI for searching the guild notes and officer notes.
+## Author: Talryn
+## Version: 0.1
+## OptionalDeps: Ace3 lib-st
+## X-Embeds: Ace3
+## X-Category: Interface Enhancements 
+## SavedVariables: GuildSearchDB
+
+embeds.xml
+
+localization-enUS.lua
+
+GuildSearch.lua

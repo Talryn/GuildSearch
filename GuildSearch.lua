@@ -3,6 +3,7 @@ GuildSearch = LibStub("AceAddon-3.0"):NewAddon("GuildSearch", "AceConsole-3.0", 
 local L = LibStub("AceLocale-3.0"):GetLocale("GuildSearch", true)
 
 local LDB = LibStub("LibDataBroker-1.1")
+local icon = LibStub("LibDBIcon-1.0")
 
 local GREEN = "|cff00ff00"
 local YELLOW = "|cffffff00"
@@ -19,6 +20,9 @@ local WHITE_VALUE = {
 
 local defaults = {
 	profile = {
+		minimap = {
+			hide = true,
+		},
 		verbose = true,
 		searchNames = true,
 		searchNotes = true,
@@ -38,13 +42,21 @@ local options = {
 			type = "header",
 			name = "General Options",
 		},
+	    minimap = {
+            name = L["Minimap Button"],
+            desc = L["Toggle the minimap button"],
+            type = "toggle",
+            set = "SetMinimapButton",
+            get = "GetMinimapButton",
+			order = 10
+        },
 	    verbose = {
             name = L["Verbose"],
             desc = L["Toggles the display of informational messages"],
             type = "toggle",
             set = "SetVerbose",
             get = "GetVerbose",
-			order = 10
+			order = 15
         },
 		displayheader2 = {
 			order = 20,
@@ -94,6 +106,7 @@ local options = {
     }
 }
 
+local guildSearchLDB = nil
 local searchTerm = nil
 local guildFrame = nil
 local guildData = {}
@@ -114,7 +127,7 @@ function GuildSearch:OnInitialize()
 	self:RegisterChatCommand("gsearch", "GuildSearchHandler")	
 
 	-- Create the LDB launcher
-	LDB:NewDataObject("GuildSearch",{
+	guildSearchLDB = LDB:NewDataObject("GuildSearch",{
 		type = "launcher",
 		icon = "Interface\\Icons\\INV_Scroll_03.blp",
 		OnClick = function(clickedframe, button)
@@ -132,6 +145,7 @@ function GuildSearch:OnInitialize()
 			end
 		end
 	})
+	icon:Register("GuildSearchLDB", guildSearchLDB, self.db.profile.minimap)
 end
 
 function GuildSearch:GuildSearchHandler(input)
@@ -382,6 +396,21 @@ function GuildSearch:HideGuildWindow()
 	if guildFrame then
 		guildFrame:Hide()
 	end
+end
+
+function GuildSearch:SetMinimapButton(info, value)
+	-- Reverse the value since the stored value is to hide it and not show it
+    self.db.profile.minimap.hide = not value
+	if self.db.profile.minimap.hide then
+		icon:Hide("GuildSearchLDB")
+	else
+		icon:Show("GuildSearchLDB")
+	end
+end
+
+function GuildSearch:GetMinimapButton(info)
+	-- Reverse the value since the stored value is to hide it and not show it
+    return not self.db.profile.minimap.hide
 end
 
 function GuildSearch:SetVerbose(info, value)

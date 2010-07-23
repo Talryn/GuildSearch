@@ -14,6 +14,8 @@ L["Note"] = true
 L["Officer Note"] = true
 L["Rank"] = true
 
+L["Minimap Button"] = true
+L["Toggle the minimap button"] = true
 L["Verbose"] = true
 L["Toggles the display of informational messages"] = true
 L["Search Options"] = true

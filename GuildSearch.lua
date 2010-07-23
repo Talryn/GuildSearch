@@ -158,7 +158,9 @@ function GuildSearch:GuildSearchHandler(input)
 	SetGuildRosterShowOffline(true)
 
 	-- Update the guild roster
-	GuildRoster()
+	if IsInGuild() then
+		GuildRoster()
+	end
 end
 
 function GuildSearch:OnEnable()
@@ -175,11 +177,14 @@ end
 
 function GuildSearch:PopulateGuildData()
 	guildData = {}
-	local numMembers = GetNumGuildMembers()
-	for index = 1, numMembers do
-		local name, rank, rankIndex, level, class, zone, note, 
-			officernote, online, status, classFileName = GetGuildRosterInfo(index)
-		table.insert(guildData, {name,level,note,officernote,rank,classFileName})
+	
+	if IsInGuild() then
+		local numMembers = GetNumGuildMembers()
+		for index = 1, numMembers do
+			local name, rank, rankIndex, level, class, zone, note, 
+				officernote, online, status, classFileName = GetGuildRosterInfo(index)
+				table.insert(guildData, {name,level,note,officernote,rank,classFileName})
+		end
 	end
 
 	-- Update the guild data now

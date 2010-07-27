@@ -10,6 +10,6 @@
 
 embeds.xml
 
-localization-enUS.lua
+locale.xml
 
 GuildSearch.lua

@@ -176,7 +176,7 @@ function GuildSearch:OnDisable()
 end
 
 function GuildSearch:PopulateGuildData()
-	guildData = {}
+	wipe(guildData)
 	
 	if IsInGuild() then
 		local numMembers = GetNumGuildMembers()

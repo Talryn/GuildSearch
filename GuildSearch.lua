@@ -1,4 +1,4 @@
-GuildSearch = LibStub("AceAddon-3.0"):NewAddon("GuildSearch", "AceConsole-3.0", "AceEvent-3.0")
+local GuildSearch = LibStub("AceAddon-3.0"):NewAddon("GuildSearch", "AceConsole-3.0", "AceEvent-3.0")
 
 local L = LibStub("AceLocale-3.0"):GetLocale("GuildSearch", true)
 
@@ -328,9 +328,9 @@ function GuildSearch:CreateGuildFrame()
 	searchterm:SetWidth(300)
 	searchterm:SetHeight(35)
 	searchterm:SetPoint("TOPLEFT", guildwindow, "TOPLEFT", 30, -50)
-	searchterm:SetScript("OnShow", function() this:SetFocus() end)
+	searchterm:SetScript("OnShow", function() searchterm:SetFocus() end)
 	searchterm:SetScript("OnEnterPressed", function() table:SortData() end)
-	searchterm:SetScript("OnEscapePressed", function() this:SetText(""); this:GetParent():Hide(); end)
+	searchterm:SetScript("OnEscapePressed", function() searchterm:SetText(""); searchterm:GetParent():Hide(); end)
 
 	table.frame:SetPoint("TOP", searchterm, "BOTTOM", 0, -20)
 	table.frame:SetPoint("LEFT", guildwindow, "LEFT", 25, 0)
@@ -354,7 +354,7 @@ function GuildSearch:CreateGuildFrame()
 	closebutton:SetWidth(90)
 	closebutton:SetHeight(20)
 	closebutton:SetPoint("BOTTOM", guildwindow, "BOTTOM", 0, 20)
-	closebutton:SetScript("OnClick", function() this:GetParent():Hide(); end)
+	closebutton:SetScript("OnClick", function() closebutton:GetParent():Hide(); end)
 
 	guildwindow.table = table
 	guildwindow.searchterm = searchterm

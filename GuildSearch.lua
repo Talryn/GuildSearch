@@ -402,13 +402,14 @@ function GuildSearch:CreateGuildFrame()
 	table:SetFilter(
 		function(self, row)
 			local term = searchterm:GetText()
+			local profile = GuildSearch.db.profile
 			if term and #term > 0 then
 				term = term:lower()
-				if ((self.db.profile.searchNames and row[1]:lower():find(term)) or
-					(self.db.profile.searchNotes and row[3]:lower():find(term)) or
-					(self.db.profile.searchOfficerNotes and row[4]:lower():find(term)) or 
-					(self.db.profile.searchRank and row[5]:lower():find(term)) or			
-					(self.db.profile.searchClass and row[6]:lower():find(term)) then
+				if ((profile.searchNames and row[1]:lower():find(term)) or
+					(profile.searchNotes and row[3]:lower():find(term)) or
+					(profile.searchOfficerNotes and row[4]:lower():find(term)) or 
+					(profile.searchRank and row[5]:lower():find(term)) or			
+					(profile.searchClass and row[6]:lower():find(term))) then
 					return true
 				end
 

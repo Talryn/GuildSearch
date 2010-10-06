@@ -1,5 +1,11 @@
 local GuildSearch = LibStub("AceAddon-3.0"):NewAddon("GuildSearch", "AceConsole-3.0", "AceEvent-3.0")
 
+local ADDON_NAME = ...
+local ADDON_VERSION = "@project-version@"
+
+-- Local versions for performance
+local tinsert = table.insert
+
 local L = LibStub("AceLocale-3.0"):GetLocale("GuildSearch", true)
 
 local LDB = LibStub("LibDataBroker-1.1")
@@ -46,20 +52,31 @@ local options = {
             name = L["Minimap Button"],
             desc = L["Toggle the minimap button"],
             type = "toggle",
-            set = "SetMinimapButton",
-            get = "GetMinimapButton",
+            set = function(info,val)
+                	-- Reverse the value since the stored value is to hide it
+                    self.db.profile.minimap.hide = not val
+                	if self.db.profile.minimap.hide then
+                		icon:Hide("GuildSearchLDB")
+                	else
+                		icon:Show("GuildSearchLDB")
+                	end
+                  end,
+            get = function(info)
+        	        -- Reverse the value since the stored value is to hide it
+                    return not self.db.profile.minimap.hide
+                  end,
 			order = 10
         },
 	    verbose = {
             name = L["Verbose"],
             desc = L["Toggles the display of informational messages"],
             type = "toggle",
-            set = "SetVerbose",
-            get = "GetVerbose",
-			order = 15
+            set = function(info, val) self.db.profile.verbose = val end,
+            get = function(info) return self.db.profile.verbose end,
+			order = 20
         },
 		displayheader2 = {
-			order = 20,
+			order = 100,
 			type = "header",
 			name = L["Search Options"],
 		},
@@ -67,41 +84,41 @@ local options = {
             name = L["Search Names"],
             desc = L["When checked, searches include the character name."],
             type = "toggle",
-            set = "SetSearchNames",
-            get = "GetSearchNames",
-			order = 30
+            set = function(info, val) self.db.profile.searchNames = val end,
+            get = function(info) return self.db.profile.searchNames end,
+			order = 110
         },
         searchNotes = {
             name = L["Search Notes"],
             desc = L["When checked, searches include the notes."],
             type = "toggle",
-            set = "SetSearchNotes",
-            get = "GetSearchNotes",
-			order = 40
+            set = function(info, val) self.db.profile.searchNotes = val end,
+            get = function(info) return self.db.profile.searchNotes end,
+			order = 120
         },
         searchOfficerNotes = {
             name = L["Search Officer Notes"],
             desc = L["When checked, searches include the officer notes."],
             type = "toggle",
-            set = "SetSearchOfficerNotes",
-            get = "GetSearchOfficerNotes",
-			order = 50
+            set = function(info, val) self.db.profile.searchOfficerNotes = val end,
+            get = function(info) return self.db.profile.searchOfficerNotes end,
+			order = 130
         },
         searchRank = {
             name = L["Search Rank"],
             desc = L["When checked, searches include the guild ranks."],
             type = "toggle",
-            set = "SetSearchRank",
-            get = "GetSearchRank",
-			order = 60
+            set = function(info, val) self.db.profile.searchRank = val end,
+            get = function(info) return self.db.profile.searchRank end,
+			order = 140
         },
         searchClass = {
             name = L["Search Class"],
             desc = L["When checked, searches include the character's class."],
             type = "toggle",
-            set = "SetSearchClass",
-            get = "GetSearchClass",
-			order = 70
+            set = function(info, val) self.db.profile.searchClass = val end,
+            get = function(info) return self.db.profile.searchClass end,
+			order = 150
         }
     }
 }
@@ -131,17 +148,32 @@ function GuildSearch:OnInitialize()
 		type = "launcher",
 		icon = "Interface\\Icons\\INV_Scroll_03.blp",
 		OnClick = function(clickedframe, button)
-			if self:IsWindowVisible() then
-				self:HideGuildWindow()
-			else
-				self:GuildSearchHandler("")
-			end
+		    if button == "RightButton" then
+    			local optionsFrame = InterfaceOptionsFrame
+
+    			if optionsFrame:IsVisible() then
+    				optionsFrame:Hide()
+    			else
+    			    self:HideGuildWindow()
+    				InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
+    			end
+            elseif button == "LeftButton" then
+    			if self:IsWindowVisible() then
+    				self:HideGuildWindow()
+    			else
+        			local optionsFrame = InterfaceOptionsFrame
+    			    optionsFrame:Hide()
+    				self:GuildSearchHandler("")
+    			end
+            end
 		end,
 		OnTooltipShow = function(tooltip)
 			if tooltip and tooltip.AddLine then
-				tooltip:AddLine(GREEN .. "Guild Search")
+				tooltip:AddLine(GREEN .. "Guild Search".." "..ADDON_VERSION)
 				tooltip:AddLine(YELLOW .. L["Left click"] .. " " .. WHITE
 					.. L["to open/close the window"])
+				tooltip:AddLine(YELLOW .. L["Right click"] .. " " .. WHITE
+					.. L["to open/close the configuration."])
 			end
 		end
 	})
@@ -149,7 +181,7 @@ function GuildSearch:OnInitialize()
 end
 
 function GuildSearch:GuildSearchHandler(input)
-	searchTerm = string.lower(input)
+	searchTerm = input:lower()
 	
 	-- Show the guild frame
 	guildFrame:Show()
@@ -217,7 +249,7 @@ function GuildSearch:CreateGuildFrame()
 		["width"] = 100,
 		["align"] = "LEFT",
 		["color"] = function(data, cols, realrow, column, table)
-			local className = string.upper(data[realrow][6])
+			local className = data[realrow][6]:upper()
 			if className == "DEATH KNIGHT" then
 				className = "DEATHKNIGHT"
 			end
@@ -328,9 +360,13 @@ function GuildSearch:CreateGuildFrame()
 	searchterm:SetWidth(300)
 	searchterm:SetHeight(35)
 	searchterm:SetPoint("TOPLEFT", guildwindow, "TOPLEFT", 30, -50)
-	searchterm:SetScript("OnShow", function() searchterm:SetFocus() end)
-	searchterm:SetScript("OnEnterPressed", function() table:SortData() end)
-	searchterm:SetScript("OnEscapePressed", function() searchterm:SetText(""); searchterm:GetParent():Hide(); end)
+	searchterm:SetScript("OnShow", function(this) this:SetFocus() end)
+	searchterm:SetScript("OnEnterPressed", function(this) table:SortData() end)
+	searchterm:SetScript("OnEscapePressed",
+	    function(this)
+	        this:SetText("")
+	        this:GetParent():Hide()
+	    end)
 
 	table.frame:SetPoint("TOP", searchterm, "BOTTOM", 0, -20)
 	table.frame:SetPoint("LEFT", guildwindow, "LEFT", 25, 0)
@@ -340,40 +376,39 @@ function GuildSearch:CreateGuildFrame()
 	searchbutton:SetWidth(100)
 	searchbutton:SetHeight(20)
 	searchbutton:SetPoint("LEFT", searchterm, "RIGHT", 10, 0)
-	searchbutton:SetScript("OnClick", function() table:SortData() end)
+	searchbutton:SetScript("OnClick", function(this) table:SortData() end)
 
 	local clearbutton = CreateFrame("Button", nil, guildwindow, "UIPanelButtonTemplate")
 	clearbutton:SetText(L["Clear"])
 	clearbutton:SetWidth(100)
 	clearbutton:SetHeight(20)
 	clearbutton:SetPoint("LEFT", searchbutton, "RIGHT", 10, 0)
-	clearbutton:SetScript("OnClick", function() searchterm:SetText(""); table:SortData(); end)
+	clearbutton:SetScript("OnClick",
+	    function(this)
+	        searchterm:SetText("")
+	        table:SortData()
+	    end)
 
 	local closebutton = CreateFrame("Button", nil, guildwindow, "UIPanelButtonTemplate")
 	closebutton:SetText(L["Close"])
 	closebutton:SetWidth(90)
 	closebutton:SetHeight(20)
 	closebutton:SetPoint("BOTTOM", guildwindow, "BOTTOM", 0, 20)
-	closebutton:SetScript("OnClick", function() closebutton:GetParent():Hide(); end)
+	closebutton:SetScript("OnClick", function(this) this:GetParent():Hide(); end)
 
 	guildwindow.table = table
 	guildwindow.searchterm = searchterm
 	
 	table:SetFilter(
 		function(self, row)
-			local searchterm = searchterm:GetText()
-			if searchterm and #searchterm > 0 then
-				term = string.lower(searchterm)
-				if (GuildSearch:GetSearchNames() and 
-					string.find(string.lower(row[1]), term)) or
-					(GuildSearch:GetSearchNotes() and 
-				  	 string.find(string.lower(row[3]), term)) or
-					(GuildSearch:GetSearchOfficerNotes() and 
-					 string.find(string.lower(row[4]), term)) or 
-					(GuildSearch:GetSearchRank() and 
-					 string.find(string.lower(row[5]), term)) or			
-					(GuildSearch:GetSearchClass() and 
-					 string.find(string.lower(row[6]), term)) then
+			local term = searchterm:GetText()
+			if term and #term > 0 then
+				term = term:lower()
+				if ((self.db.profile.searchNames and row[1]:lower():find(term)) or
+					(self.db.profile.searchNotes and row[3]:lower():find(term)) or
+					(self.db.profile.searchOfficerNotes and row[4]:lower():find(term)) or 
+					(self.db.profile.searchRank and row[5]:lower():find(term)) or			
+					(self.db.profile.searchClass and row[6]:lower():find(term)) then
 					return true
 				end
 
@@ -401,67 +436,4 @@ function GuildSearch:HideGuildWindow()
 	if guildFrame then
 		guildFrame:Hide()
 	end
-end
-
-function GuildSearch:SetMinimapButton(info, value)
-	-- Reverse the value since the stored value is to hide it and not show it
-    self.db.profile.minimap.hide = not value
-	if self.db.profile.minimap.hide then
-		icon:Hide("GuildSearchLDB")
-	else
-		icon:Show("GuildSearchLDB")
-	end
-end
-
-function GuildSearch:GetMinimapButton(info)
-	-- Reverse the value since the stored value is to hide it and not show it
-    return not self.db.profile.minimap.hide
-end
-
-function GuildSearch:SetVerbose(info, value)
-    self.db.profile.verbose = value
-end
-
-function GuildSearch:GetVerbose(info)
-    return self.db.profile.verbose
-end
-
-function GuildSearch:SetSearchNames(info, value)
-    self.db.profile.searchNames = value
-end
-
-function GuildSearch:GetSearchNames(info)
-    return self.db.profile.searchNames
-end
-
-function GuildSearch:SetSearchNotes(info, value)
-    self.db.profile.searchNotes = value
-end
-
-function GuildSearch:GetSearchNotes(info)
-    return self.db.profile.searchNotes
-end
-
-function GuildSearch:SetSearchOfficerNotes(info, value)
-    self.db.profile.searchOfficerNotes = value
-end
-
-function GuildSearch:GetSearchOfficerNotes(info)
-    return self.db.profile.searchOfficerNotes
-end
-
-function GuildSearch:SetSearchRank(info, value)
-    self.db.profile.searchRank = value
-end
-
-function GuildSearch:GetSearchRank(info)
-    return self.db.profile.searchRank
-end
-
-function GuildSearch:SetSearchClass(info, value)
-    self.db.profile.searchClass = value
-end
-
-function GuildSearch:GetSearchClass(info)
-    return self.db.profile.searchClass
 end

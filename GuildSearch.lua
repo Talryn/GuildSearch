@@ -239,6 +239,7 @@ function GuildSearch:PopulateGuildData()
 	-- Update the guild data now
 	if guildFrame then
 		guildFrame.table:SetData(guildData, true)
+		self:UpdateRowCount()
 	end
 end
 
@@ -378,7 +379,11 @@ function GuildSearch:CreateGuildFrame()
 	searchterm:SetHeight(35)
 	searchterm:SetPoint("TOPLEFT", guildwindow, "TOPLEFT", 30, -50)
 	searchterm:SetScript("OnShow", function(this) this:SetFocus() end)
-	searchterm:SetScript("OnEnterPressed", function(this) table:SortData() end)
+	searchterm:SetScript("OnEnterPressed",
+	    function(this)
+	        table:SortData()
+	        self:UpdateRowCount()
+	    end)
 	searchterm:SetScript("OnEscapePressed",
 	    function(this)
 	        this:SetText("")
@@ -393,7 +398,11 @@ function GuildSearch:CreateGuildFrame()
 	searchbutton:SetWidth(100)
 	searchbutton:SetHeight(20)
 	searchbutton:SetPoint("LEFT", searchterm, "RIGHT", 10, 0)
-	searchbutton:SetScript("OnClick", function(this) table:SortData() end)
+	searchbutton:SetScript("OnClick",
+	    function(this)
+	        table:SortData()
+	        self:UpdateRowCount()
+	    end)
 
 	local clearbutton = CreateFrame("Button", nil, guildwindow, "UIPanelButtonTemplate")
 	clearbutton:SetText(L["Clear"])
@@ -404,7 +413,11 @@ function GuildSearch:CreateGuildFrame()
 	    function(this)
 	        searchterm:SetText("")
 	        table:SortData()
+	        self:UpdateRowCount()
 	    end)
+
+	local rowcounttext = guildwindow:CreateFontString("GS_Main_RowCountText", guildwindow, "GameFontNormalSmall")
+	rowcounttext:SetPoint("BOTTOMLEFT", guildwindow, "BOTTOMLEFT", 20, 20)
 
 	local closebutton = CreateFrame("Button", nil, guildwindow, "UIPanelButtonTemplate")
 	closebutton:SetText(L["Close"])
@@ -415,7 +428,8 @@ function GuildSearch:CreateGuildFrame()
 
 	guildwindow.table = table
 	guildwindow.searchterm = searchterm
-	
+	guildwindow.rowcount = rowcounttext
+
 	table:SetFilter(
 		function(self, row)
 			local term = searchterm:GetText()
@@ -441,6 +455,16 @@ function GuildSearch:CreateGuildFrame()
 	guildwindow:Hide()
 	
 	return guildwindow
+end
+
+function GuildSearch:UpdateRowCount()
+    local table = guildFrame.table
+    local count = 0
+    if table and table.filtered and type(table.filtered) == "table" then
+        count = #table.filtered
+    end
+    
+    guildFrame.rowcount:SetText(count.." results")
 end
 
 function GuildSearch:IsWindowVisible()

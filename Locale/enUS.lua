@@ -29,6 +29,8 @@ L["Search Rank"] = true
 L["When checked, searches include the guild ranks."] = true
 L["Search Class"] = true
 L["When checked, searches include the character's class."] = true
+L["Enable Pattern Matching"] = true
+L["Enables pattern matching when searching the guild data."] = true
 
 L["Left click"] = true
 L["to open/close the window"] = true

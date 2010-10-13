@@ -34,94 +34,111 @@ local defaults = {
 		searchNotes = true,
 		searchOfficerNotes = true,
 		searchRank = false,
-		searchClass = false
+		searchClass = false,
+		patternMatching = false
 	}
 }
 
-local options = {
-    name = "Guild Search",
-    handler = GuildSearch,
-    type = 'group',
-    args = {
-		displayheader = {
-			order = 0,
-			type = "header",
-			name = "General Options",
-		},
-	    minimap = {
-            name = L["Minimap Button"],
-            desc = L["Toggle the minimap button"],
-            type = "toggle",
-            set = function(info,val)
-                	-- Reverse the value since the stored value is to hide it
-                    self.db.profile.minimap.hide = not val
-                	if self.db.profile.minimap.hide then
-                		icon:Hide("GuildSearchLDB")
-                	else
-                		icon:Show("GuildSearchLDB")
-                	end
-                  end,
-            get = function(info)
-        	        -- Reverse the value since the stored value is to hide it
-                    return not self.db.profile.minimap.hide
-                  end,
-			order = 10
-        },
-	    verbose = {
-            name = L["Verbose"],
-            desc = L["Toggles the display of informational messages"],
-            type = "toggle",
-            set = function(info, val) self.db.profile.verbose = val end,
-            get = function(info) return self.db.profile.verbose end,
-			order = 20
-        },
-		displayheader2 = {
-			order = 100,
-			type = "header",
-			name = L["Search Options"],
-		},
-        searchNames = {
-            name = L["Search Names"],
-            desc = L["When checked, searches include the character name."],
-            type = "toggle",
-            set = function(info, val) self.db.profile.searchNames = val end,
-            get = function(info) return self.db.profile.searchNames end,
-			order = 110
-        },
-        searchNotes = {
-            name = L["Search Notes"],
-            desc = L["When checked, searches include the notes."],
-            type = "toggle",
-            set = function(info, val) self.db.profile.searchNotes = val end,
-            get = function(info) return self.db.profile.searchNotes end,
-			order = 120
-        },
-        searchOfficerNotes = {
-            name = L["Search Officer Notes"],
-            desc = L["When checked, searches include the officer notes."],
-            type = "toggle",
-            set = function(info, val) self.db.profile.searchOfficerNotes = val end,
-            get = function(info) return self.db.profile.searchOfficerNotes end,
-			order = 130
-        },
-        searchRank = {
-            name = L["Search Rank"],
-            desc = L["When checked, searches include the guild ranks."],
-            type = "toggle",
-            set = function(info, val) self.db.profile.searchRank = val end,
-            get = function(info) return self.db.profile.searchRank end,
-			order = 140
-        },
-        searchClass = {
-            name = L["Search Class"],
-            desc = L["When checked, searches include the character's class."],
-            type = "toggle",
-            set = function(info, val) self.db.profile.searchClass = val end,
-            get = function(info) return self.db.profile.searchClass end,
-			order = 150
+local options
+
+function GuildSearch:GetOptions()
+    if not options then
+        options = {
+            name = "Guild Search",
+            handler = GuildSearch,
+            type = 'group',
+            args = {
+        		displayheader = {
+        			order = 0,
+        			type = "header",
+        			name = "General Options",
+        		},
+        	    minimap = {
+                    name = L["Minimap Button"],
+                    desc = L["Toggle the minimap button"],
+                    type = "toggle",
+                    set = function(info,val)
+                        	-- Reverse the value since the stored value is to hide it
+                            self.db.profile.minimap.hide = not val
+                        	if self.db.profile.minimap.hide then
+                        		icon:Hide("GuildSearchLDB")
+                        	else
+                        		icon:Show("GuildSearchLDB")
+                        	end
+                          end,
+                    get = function(info)
+                	        -- Reverse the value since the stored value is to hide it
+                            return not self.db.profile.minimap.hide
+                          end,
+        			order = 10
+                },
+        	    verbose = {
+                    name = L["Verbose"],
+                    desc = L["Toggles the display of informational messages"],
+                    type = "toggle",
+                    set = function(info, val) self.db.profile.verbose = val end,
+                    get = function(info) return self.db.profile.verbose end,
+        			order = 20
+                },
+        		displayheader2 = {
+        			order = 100,
+        			type = "header",
+        			name = L["Search Options"],
+        		},
+                searchNames = {
+                    name = L["Search Names"],
+                    desc = L["When checked, searches include the character name."],
+                    type = "toggle",
+                    set = function(info, val) self.db.profile.searchNames = val end,
+                    get = function(info) return self.db.profile.searchNames end,
+        			order = 110
+                },
+                searchNotes = {
+                    name = L["Search Notes"],
+                    desc = L["When checked, searches include the notes."],
+                    type = "toggle",
+                    set = function(info, val) self.db.profile.searchNotes = val end,
+                    get = function(info) return self.db.profile.searchNotes end,
+        			order = 120
+                },
+                searchOfficerNotes = {
+                    name = L["Search Officer Notes"],
+                    desc = L["When checked, searches include the officer notes."],
+                    type = "toggle",
+                    set = function(info, val) self.db.profile.searchOfficerNotes = val end,
+                    get = function(info) return self.db.profile.searchOfficerNotes end,
+        			order = 130
+                },
+                searchRank = {
+                    name = L["Search Rank"],
+                    desc = L["When checked, searches include the guild ranks."],
+                    type = "toggle",
+                    set = function(info, val) self.db.profile.searchRank = val end,
+                    get = function(info) return self.db.profile.searchRank end,
+        			order = 140
+                },
+                searchClass = {
+                    name = L["Search Class"],
+                    desc = L["When checked, searches include the character's class."],
+                    type = "toggle",
+                    set = function(info, val) self.db.profile.searchClass = val end,
+                    get = function(info) return self.db.profile.searchClass end,
+        			order = 150
+                },
+                patternMatching = {
+                    name = L["Enable Pattern Matching"],
+                    desc = L["Enables pattern matching when searching the guild data."],
+                    type = "toggle",
+                    set = function(info, val) self.db.profile.patternMatching = val end,
+                    get = function(info) return self.db.profile.patternMatching end,
+        			order = 160
+                },
+            }
         }
-    }
-}
+    end
+
+    return options
+end
 
 local guildSearchLDB = nil
 local searchTerm = nil
@@ -133,7 +150,7 @@ function GuildSearch:OnInitialize()
     self.db = LibStub("AceDB-3.0"):New("GuildSearchDB", defaults, "Default")
 
     -- Register the options table
-    LibStub("AceConfig-3.0"):RegisterOptionsTable("GuildSearch", options)
+    LibStub("AceConfig-3.0"):RegisterOptionsTable("GuildSearch", self:GetOptions())
 	self.optionsFrame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions(
 	    "GuildSearch", "Guild Search")
 
@@ -405,11 +422,12 @@ function GuildSearch:CreateGuildFrame()
 			local profile = GuildSearch.db.profile
 			if term and #term > 0 then
 				term = term:lower()
-				if ((profile.searchNames and row[1]:lower():find(term)) or
-					(profile.searchNotes and row[3]:lower():find(term)) or
-					(profile.searchOfficerNotes and row[4]:lower():find(term)) or 
-					(profile.searchRank and row[5]:lower():find(term)) or			
-					(profile.searchClass and row[6]:lower():find(term))) then
+				local plain = not GuildSearch.db.profile.patternMatching
+				if ((profile.searchNames and row[1]:lower():find(term,1,plain)) or
+					(profile.searchNotes and row[3]:lower():find(term,1,plain)) or
+					(profile.searchOfficerNotes and row[4]:lower():find(term,1,plain)) or 
+					(profile.searchRank and row[5]:lower():find(term,1,plain)) or			
+					(profile.searchClass and row[6]:lower():find(term,1,plain))) then
 					return true
 				end
 

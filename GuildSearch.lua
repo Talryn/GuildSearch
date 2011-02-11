@@ -35,9 +35,18 @@ local defaults = {
 		searchOfficerNotes = true,
 		searchRank = false,
 		searchClass = false,
-		patternMatching = false
+		patternMatching = false,
+		remember_main_pos = true,
+		lock_main_window = false,
+		main_window_x = 0,
+		main_window_y = 0,
 	}
 }
+
+local guildSearchLDB = nil
+local searchTerm = nil
+local guildFrame = nil
+local guildData = {}
 
 local options
 
@@ -133,17 +142,37 @@ function GuildSearch:GetOptions()
                     get = function(info) return self.db.profile.patternMatching end,
         			order = 160
                 },
+        		headerMainWindow = {
+        			order = 200,
+        			type = "header",
+        			name = L["Main Window"],
+        		},
+                lock_main_window = {
+                    name = L["Lock"],
+                    desc = L["Lock_OptionDesc"],
+                    type = "toggle",
+                    set = function(info,val)
+                        self.db.profile.lock_main_window = val
+                        guildFrame.lock = val
+                    end,
+                    get = function(info) return self.db.profile.lock_main_window end,
+        			order = 210
+                },
+                remember_main_pos = {
+                    name = L["Remember Position"],
+                    desc = L["RememberPosition_OptionDesc"],
+                    type = "toggle",
+                    set = function(info,val) self.db.profile.remember_main_pos = val end,
+                    get = function(info) return self.db.profile.remember_main_pos end,
+        			order = 220
+                },
+
             }
         }
     end
 
     return options
 end
-
-local guildSearchLDB = nil
-local searchTerm = nil
-local guildFrame = nil
-local guildData = {}
 
 function GuildSearch:OnInitialize()
     -- Called when the addon is loaded
@@ -254,7 +283,16 @@ function GuildSearch:CreateGuildFrame()
 	guildwindow:SetToplevel(true)
 	guildwindow:SetWidth(700)
 	guildwindow:SetHeight(450)
-	guildwindow:SetPoint("CENTER", UIParent)
+
+	if self.db.profile.remember_main_pos then
+        guildwindow:SetPoint("CENTER", UIParent, "CENTER",
+            self.db.profile.main_window_x, self.db.profile.main_window_y)
+    else
+	    guildwindow:SetPoint("CENTER", UIParent)
+    end
+
+    guildwindow.lock = self.db.profile.lock_main_window
+
 	guildwindow:SetBackdrop({bgFile="Interface\\DialogFrame\\UI-DialogBox-Background", 
 	    edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border", tile=true,
 		tileSize=32, edgeSize=32, insets={left=11, right=12, top=12, bottom=11}})
@@ -451,7 +489,35 @@ function GuildSearch:CreateGuildFrame()
 			end
 		end
 	)
-	
+
+    guildwindow.lock = self.db.profile.lock_main_window
+
+    guildwindow:SetMovable()
+    guildwindow:RegisterForDrag("LeftButton")
+    guildwindow:SetScript("OnDragStart",
+        function(self,button)
+			if not self.lock then
+            	self:StartMoving()
+			end
+        end)
+    guildwindow:SetScript("OnDragStop",
+        function(self)
+            self:StopMovingOrSizing()
+			if GuildSearch.db.profile.remember_main_pos then
+    			local scale = self:GetEffectiveScale() / UIParent:GetEffectiveScale()
+    			local x, y = self:GetCenter()
+    			x, y = x * scale, y * scale
+    			x = x - GetScreenWidth()/2
+    			y = y - GetScreenHeight()/2
+    			x = x / self:GetScale()
+    			y = y / self:GetScale()
+    			GuildSearch.db.profile.main_window_x, 
+    			    GuildSearch.db.profile.main_window_y = x, y
+    			self:SetUserPlaced(false);
+            end
+        end)
+    guildwindow:EnableMouse(true)
+
 	guildwindow:Hide()
 	
 	return guildwindow

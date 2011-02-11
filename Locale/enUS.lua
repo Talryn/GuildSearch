@@ -36,3 +36,9 @@ L["Left click"] = true
 L["to open/close the window"] = true
 L["Right click"] = true
 L["to open/close the configuration."] = true
+
+L["Main Window"] = true
+L["Lock"] = true
+L["Lock_OptionDesc"] = "Toggles if the window is movable."
+L["Remember Position"] = true
+L["RememberPosition_OptionDesc"] = "Toggles if the window's position is remember between sessions."

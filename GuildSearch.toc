@@ -1,4 +1,4 @@
-## Interface: 40000
+## Interface: 40100
 ## Title: Guild Search
 ## Notes: A UI for searching the guild notes and officer notes.
 ## Author: Talryn

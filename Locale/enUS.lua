@@ -7,10 +7,17 @@ L["Guild Search"] = true
 L["Close"] = true
 L["Search"] = true
 L["Clear"] = true
+L["Edit"] = true
+L["Details"] = true
+L["Save"] = true
+L["Cancel"] = true
+
+L["Guild Member Details"] = true
 
 L["Name"] = true
 L["Level"] = true
 L["Note"] = true
+L["Public Note"] = true
 L["Officer Note"] = true
 L["Rank"] = true
 

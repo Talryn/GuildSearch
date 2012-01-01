@@ -268,9 +268,20 @@ function GuildSearch:PopulateGuildData()
 		for index = 1, numMembers do
 			local name, rank, rankIndex, level, class, zone, note, 
 				officernote, online, status, classFileName = GetGuildRosterInfo(index)
-				table.insert(guildData, 
+
+                local years, months, days, hours = GetGuildRosterLastOnline(index)
+                local lastOnline = 0
+                if online then
+                    lastOnline = time()
+                elseif years and months and days and hours then
+                    local diff = (((years*365)+(months*30)+days)*24+hours)*60*60
+                    lastOnline = time() - diff
+                end
+                local lastOnlineDate = date("%Y/%m/%d-%H", lastOnline)
+
+				tinsert(guildData, 
 				    {name,level,note,officernote,rank,
-				     classFileName, rankIndex})
+				     lastOnlineDate, classFileName, rankIndex})
 		end
 	end
 
@@ -579,6 +590,7 @@ local NAME_COL = 1
 local NOTE_COL = 3
 local ONOTE_COL = 4
 local RANK_COL = 5
+local LASTONLINE_COL = 6
 function GuildSearch:CreateGuildFrame()
 	local guildwindow = CreateFrame("Frame", "GuildSearchWindow", UIParent)
 	guildwindow:SetFrameStrata("DIALOG")
@@ -607,7 +619,7 @@ function GuildSearch:CreateGuildFrame()
 		["width"] = 100,
 		["align"] = "LEFT",
 		["color"] = function(data, cols, realrow, column, table)
-			local className = data[realrow][6]:upper()
+			local className = data[realrow][7]:upper()
 			if className == "DEATH KNIGHT" then
 				className = "DEATHKNIGHT"
 			end
@@ -651,7 +663,7 @@ function GuildSearch:CreateGuildFrame()
 	}
 	cols[3] = {
 		["name"] = L["Note"],
-		["width"] = 220,
+		["width"] = 180,
 		["align"] = "LEFT",
 		["color"] = {
 			["r"] = 1.0,
@@ -670,7 +682,7 @@ function GuildSearch:CreateGuildFrame()
 	}
 	cols[4] = {
 		["name"] = L["Officer Note"],
-		["width"] = 200,
+		["width"] = 120,
 		["align"] = "LEFT",
 		["color"] = {
 			["r"] = 1.0,
@@ -690,6 +702,25 @@ function GuildSearch:CreateGuildFrame()
 	cols[5] = {
 		["name"] = L["Rank"],
 		["width"] = 60,
+		["align"] = "LEFT",
+		["color"] = {
+			["r"] = 1.0,
+			["g"] = 1.0,
+			["b"] = 1.0,
+			["a"] = 1.0
+		},
+		["colorargs"] = nil,
+		["bgcolor"] = {
+			["r"] = 0.0,
+			["g"] = 0.0,
+			["b"] = 0.0,
+			["a"] = 1.0
+		},
+		["DoCellUpdate"] = nil,
+	}
+	cols[6] = {
+		["name"] = L["Last Online"],
+		["width"] = 100,
 		["align"] = "LEFT",
 		["color"] = {
 			["r"] = 1.0,
@@ -811,7 +842,7 @@ function GuildSearch:CreateGuildFrame()
 					(profile.searchNotes and row[3]:lower():find(term,1,plain)) or
 					(profile.searchOfficerNotes and row[4]:lower():find(term,1,plain)) or 
 					(profile.searchRank and row[5]:lower():find(term,1,plain)) or			
-					(profile.searchClass and row[6]:lower():find(term,1,plain))) then
+					(profile.searchClass and row[7]:lower():find(term,1,plain))) then
 					return true
 				end
 

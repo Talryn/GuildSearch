@@ -20,6 +20,7 @@ L["Note"] = true
 L["Public Note"] = true
 L["Officer Note"] = true
 L["Rank"] = true
+L["Last Online"] = true
 
 L["Minimap Button"] = true
 L["Toggle the minimap button"] = true

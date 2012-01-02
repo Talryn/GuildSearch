@@ -271,13 +271,15 @@ function GuildSearch:PopulateGuildData()
 
                 local years, months, days, hours = GetGuildRosterLastOnline(index)
                 local lastOnline = 0
+                local lastOnlineDate = ""
                 if online then
                     lastOnline = time()
+                    lastOnlineDate = date("%Y/%m/%d %H:%M", lastOnline)
                 elseif years and months and days and hours then
                     local diff = (((years*365)+(months*30)+days)*24+hours)*60*60
                     lastOnline = time() - diff
+                    lastOnlineDate = date("%Y/%m/%d %H:00", lastOnline)
                 end
-                local lastOnlineDate = date("%Y/%m/%d-%H", lastOnline)
 
 				tinsert(guildData, 
 				    {name,level,note,officernote,rank,
@@ -735,6 +737,7 @@ function GuildSearch:CreateGuildFrame()
 			["b"] = 0.0,
 			["a"] = 1.0
 		},
+		["sortnext"]= 1,
 		["DoCellUpdate"] = nil,
 	}
 

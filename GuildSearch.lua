@@ -382,8 +382,6 @@ function GuildSearch:UpdateMemberDetail(name, publicNote, officerNote, newRankIn
                             changingRankFmt:format(charname, rankIndex, newRankIndex))
                     end
                     SetGuildMemberRank(i, newRankIndex)
-                else
-                    GuildSearch:Print("Cannot set rank to the current rank.")
                 end
             else
                 GuildSearch:Print(noRankFoundFmt:format(i))

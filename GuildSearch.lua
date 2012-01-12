@@ -315,7 +315,7 @@ function GuildSearch:PopulateGuildData()
     self:RefreshMemberDetails()
 
 	-- Update the guild data now
-	if guildFrame then
+	if guildFrame and guildFrame.table then
 		guildFrame.table:SetData(guildData, true)
 		self:UpdateRowCount()
 	end
@@ -328,6 +328,10 @@ end
 function GuildSearch:GUILD_ROSTER_UPDATE(event, ...)
     local arg1 = ...
     if (arg1) then
+        -- Clear the current selection in the window as it will change
+        if guildFrame and guildFrame.table then
+            guildFrame.table:ClearSelection()
+        end
         GuildRoster()
     end
 	self:PopulateGuildData()

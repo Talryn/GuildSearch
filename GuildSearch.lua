@@ -333,7 +333,10 @@ function GuildSearch:GUILD_ROSTER_UPDATE(event, ...)
 	self:PopulateGuildData()
 end
 
-function GuildSearch:UpdateMemberDetail(name, publicNote, officerNote)
+local invalidRankFmt = "Attempt to set member rank to an invalid rank. (%s)"
+local changingRankFmt = "Changing rank for %s from %s to %s."
+local noRankFoundFmt = "Invalid rank returned for roster id. (%s)"
+function GuildSearch:UpdateMemberDetail(name, publicNote, officerNote, newRankIndex)
 	if not IsInGuild() or name == nil or #name == 0 then
         return false
     end
@@ -357,47 +360,30 @@ function GuildSearch:UpdateMemberDetail(name, publicNote, officerNote)
         if officerNote and CanEditOfficerNote() then
             GuildRosterSetOfficerNote(i, officerNote)
         end
-    end
-end
 
-local invalidRankFmt = "Attempt to set member rank to an invalid rank. (%s)"
-local changingRankFmt = "Changing rank for %s from %s to %s."
-local noRankFoundFmt = "Invalid rank returned for roster id. (%s)"
-local function SetGuildRank(self, newRankIndex)
-    local numRanks = GuildControlGetNumRanks()
-    if newRankIndex < 0 or newRankIndex > numRanks then
-        GuildSearch:Print(invalidRankFmt:format(newRankIndex or "nil"))
-        return
-    end
+        if newRankIndex then
+            newRankIndex = newRankIndex + 1
 
-    local name = memberDetailFrame.name
-	local numMembers = GetNumGuildMembers()
-	local index = 0
-	local charname, rank, rankIndex
-    while name ~= charname and index < numMembers do
-        index = index + 1
-		charname, rank, rankIndex = GetGuildRosterInfo(index)
-	end
-    
-    if name == charname and index > 0 then
-        if rankIndex then
-            rankIndex = rankIndex + 1
-            if rankIndex ~= newRankIndex then
-                if GuildSearch.db.profile.verbose then
-                    GuildSearch:Print(
-                        changingRankFmt:format(name, rankIndex, newRankIndex))
-                end
-                SetGuildMemberRank(index, newRankIndex)
-                memberDetailFrame.memberRank = newRankIndex
-                --UIDropDownMenu_SetSelectedValue(
-                --    memberDetailFrame.rankDropdown, newRankIndex)
-                --UIDropDownMenu_SetText(memberDetailFrame.rankDropdown, 
-                --    WHITE..GuildControlGetRankName(newRankIndex).."|r")
-            else
-                GuildSearch:Print("Cannot set rank to the current rank.")
+            local numRanks = GuildControlGetNumRanks()
+            if newRankIndex < 0 or newRankIndex > numRanks then
+                GuildSearch:Print(invalidRankFmt:format(newRankIndex or "nil"))
+                return
             end
-        else
-            GuildSearch:Print(noRankFoundFmt:format(index))
+
+            if rankIndex then
+                rankIndex = rankIndex + 1
+                if rankIndex ~= newRankIndex then
+                    if GuildSearch.db.profile.verbose then
+                        GuildSearch:Print(
+                            changingRankFmt:format(charname, rankIndex, newRankIndex))
+                    end
+                    SetGuildMemberRank(i, newRankIndex)
+                else
+                    GuildSearch:Print("Cannot set rank to the current rank.")
+                end
+            else
+                GuildSearch:Print(noRankFoundFmt:format(i))
+            end
         end
     end
 end
@@ -457,8 +443,9 @@ function GuildSearch:CreateMemberDetailsFrame()
 	        local frame = this:GetParent()
 	        local publicNote = frame.publicnote:GetText()
 	        local officerNote = frame.officernote:GetText()
+            local rank = UIDropDownMenu_GetSelectedID(frame.rankDropdown)
 	        self:UpdateMemberDetail(
-	            frame.charname:GetText(), publicNote, officerNote)
+	            frame.charname:GetText(), publicNote, officerNote, rank)
 	        frame:Hide()
 	    end)
 
@@ -519,7 +506,9 @@ function GuildSearch:CreateMemberDetailsFrame()
             info.arg1 = i
             info.colorCode = WHITE
             info.checked = i == memberRankIndex
-            info.func = SetGuildRank
+            info.func = function(self) 
+                UIDropDownMenu_SetSelectedValue(rankDropdown, self.value)
+            end
             -- If not the current rank, then check if the rank is allowed to be set
             -- In addition to rank restrictions, an authenticator can prohibit too
             if not info.checked then

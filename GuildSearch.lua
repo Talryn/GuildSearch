@@ -366,25 +366,24 @@ function GuildSearch:UpdateMemberDetail(name, publicNote, officerNote, newRankIn
         end
 
         if newRankIndex then
-            newRankIndex = newRankIndex + 1
-
             local numRanks = GuildControlGetNumRanks()
+
             if newRankIndex < 0 or newRankIndex > numRanks then
-                GuildSearch:Print(invalidRankFmt:format(newRankIndex or "nil"))
+                self:Print(invalidRankFmt:format(newRankIndex or "nil"))
                 return
             end
 
             if rankIndex then
                 rankIndex = rankIndex + 1
                 if rankIndex ~= newRankIndex then
-                    if GuildSearch.db.profile.verbose then
-                        GuildSearch:Print(
+                    if self.db.profile.verbose then
+                        self:Print(
                             changingRankFmt:format(charname, rankIndex, newRankIndex))
                     end
                     SetGuildMemberRank(i, newRankIndex)
                 end
             else
-                GuildSearch:Print(noRankFoundFmt:format(i))
+                self:Print(noRankFoundFmt:format(i))
             end
         end
     end
@@ -445,7 +444,7 @@ function GuildSearch:CreateMemberDetailsFrame()
 	        local frame = this:GetParent()
 	        local publicNote = frame.publicnote:GetText()
 	        local officerNote = frame.officernote:GetText()
-            local rank = UIDropDownMenu_GetSelectedID(frame.rankDropdown)
+            local rank = UIDropDownMenu_GetSelectedValue(frame.rankDropdown)
 	        self:UpdateMemberDetail(
 	            frame.charname:GetText(), publicNote, officerNote, rank)
 	        frame:Hide()

@@ -491,12 +491,12 @@ function GuildSearch:CreateMemberDetailsFrame()
         -- Set the highest rank to 1 above the user's rank
         local highestRank = userRankIndex + 1
         -- If the user cannot promote, the highest rank is the current member's rank
-        if not CanGuildPromote() then
+        if (not CanGuildPromote()) or userRankIndex >= memberRankIndex then
             highestRank = memberRankIndex
         end
         
         local lowestRank = numRanks
-        if not CanGuildDemote() then
+        if (not CanGuildDemote()) or userRankIndex >= memberRankIndex then
             lowestRank = memberRankIndex
         end
 

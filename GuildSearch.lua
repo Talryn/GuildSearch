@@ -49,6 +49,7 @@ local guildFrame = nil
 local guildData = {}
 local memberDetailFrame = nil
 local guildRanks = {}
+local guildRanksRev = {}
 
 local NAME_COL = 1
 local NOTE_COL = 3
@@ -281,6 +282,11 @@ function GuildSearch:PopulateGuildRanks()
         name = GuildControlGetRankName(i)
         guildRanks[i] = name
     end
+
+	wipe(guildRanksRev)
+	for k,v in pairs(guildRanks) do
+		guildRanksRev[v] = k
+	end
 
     self:RefreshMemberDetails()
 end
@@ -875,6 +881,7 @@ function GuildSearch:CreateGuildFrame()
 			["b"] = 0.0,
 			["a"] = 1.0
 		},
+		["sortnext"]= 1,
 		["DoCellUpdate"] = nil,
 	}
 	cols[3] = {
@@ -932,6 +939,63 @@ function GuildSearch:CreateGuildFrame()
 			["b"] = 0.0,
 			["a"] = 1.0
 		},
+		["comparesort"] = function (st, rowa, rowb, col)
+				local cella, cellb = st:GetCell(rowa, col), st:GetCell(rowb, col);
+				local a1, b1 = cella, cellb;
+				if type(a1) == 'table' then  
+					a1 = a1.value; 
+				end
+				if type(b1) == 'table' then 
+					b1 = b1.value;
+				end 
+				local column = st.cols[col];
+		
+				if type(a1) == "function" then 
+					if (cella.args) then 
+						a1 = a1(unpack(cella.args))
+					else
+						a1 = a1(st.data, self.cols, rowa, col, st);
+					end
+				end
+				if type(b1) == "function" then 
+					if (cellb.args) then 
+						b1 = b1(unpack(cellb.args))
+					else	
+						b1 = b1(st.data, st.cols, rowb, col, st);
+					end
+				end
+
+				local valuea = guildRanksRev[a1] or 11
+				local valueb = guildRanksRev[b1] or 11
+
+				if valuea == valueb then 
+					if column.sortnext then
+						local nextcol = st.cols[column.sortnext];
+						if not(nextcol.sort) then 
+							if nextcol.comparesort then 
+								return nextcol.comparesort(st, rowa, rowb, column.sortnext);
+							else
+								return st:CompareSort(rowa, rowb, column.sortnext);
+							end
+						else
+							return false;
+						end
+					else
+						return false; 
+					end 
+				else
+					local direction = column.sort or column.defaultsort or "asc"
+					-- The comparisons below are reversed since the numeric 
+					-- rank order is reversed (lower is higher). 
+					if direction:lower() == "asc" then
+						return valuea > valueb
+					else
+						return valuea < valueb
+					end
+				end
+			end,
+		["sort"] = "dsc",
+		["sortnext"]= 6,
 		["DoCellUpdate"] = nil,
 	}
 	cols[6] = {
@@ -952,6 +1016,7 @@ function GuildSearch:CreateGuildFrame()
 			["a"] = 1.0
 		},
 		["sortnext"]= 1,
+		["sort"] = "dsc",
 		["DoCellUpdate"] = nil,
 	}
 

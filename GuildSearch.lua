@@ -519,8 +519,8 @@ function GuildSearch:CreateMemberDetailsFrame()
             -- If not the current rank, then check if the rank is allowed to be set
             -- In addition to rank restrictions, an authenticator can prohibit too
             if not info.checked then
-                local allowed, reason = 
-                    IsGuildRankAssignmentAllowed(memberRankIndex, i);
+                local allowed, reason = IsGuildRankAssignmentAllowed(
+					(self:GetParent().index or 0), i);
                 if not allowed and reason == "authenticator" then
                     info.disabled = true;
                     info.tooltipWhileDisabled = 1;

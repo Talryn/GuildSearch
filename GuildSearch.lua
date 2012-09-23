@@ -841,18 +841,15 @@ function GuildSearch:CreateGuildFrame()
 		["width"] = 100,
 		["align"] = "LEFT",
 		["color"] = function(data, cols, realrow, column, table)
-			local className = data[realrow][7]:upper()
-			if className == "DEATH KNIGHT" then
-				className = "DEATHKNIGHT"
+			local className
+			if data[realrow] and data[realrow][7] then
+				className = data[realrow][7]:upper()
+				if className == "DEATH KNIGHT" then
+					className = "DEATHKNIGHT"
+				end
 			end
 			return RAID_CLASS_COLORS[className] or WHITE_VALUE
 		end,
---		["color"] = {
---			["r"] = 1.0,
---			["g"] = 1.0,
---			["b"] = 1.0,
---			["a"] = 1.0
---		},
 		["colorargs"] = nil,
 		["bgcolor"] = {
 			["r"] = 0.0,

@@ -1,4 +1,9 @@
-local GuildSearch = LibStub("AceAddon-3.0"):NewAddon("GuildSearch", "AceConsole-3.0", "AceEvent-3.0")
+local _G = getfenv(0)
+
+local pairs = _G.pairs
+local ipairs = _G.ipairs
+
+local GuildSearch = _G.LibStub("AceAddon-3.0"):NewAddon("GuildSearch", "AceConsole-3.0", "AceEvent-3.0")
 
 local ADDON_NAME = ...
 local ADDON_VERSION = "@project-version@"
@@ -6,10 +11,10 @@ local ADDON_VERSION = "@project-version@"
 -- Local versions for performance
 local tinsert = table.insert
 
-local L = LibStub("AceLocale-3.0"):GetLocale("GuildSearch", true)
-local AGU = LibStub("AceGUI-3.0")
-local LDB = LibStub("LibDataBroker-1.1")
-local icon = LibStub("LibDBIcon-1.0")
+local L = _G.LibStub("AceLocale-3.0"):GetLocale("GuildSearch", true)
+local AGU = _G.LibStub("AceGUI-3.0")
+local LDB = _G.LibStub("LibDataBroker-1.1")
+local icon = _G.LibStub("LibDBIcon-1.0")
 
 local GREEN = "|cff00ff00"
 local YELLOW = "|cffffff00"
@@ -187,11 +192,11 @@ end
 
 function GuildSearch:OnInitialize()
     -- Called when the addon is loaded
-    self.db = LibStub("AceDB-3.0"):New("GuildSearchDB", defaults, "Default")
+    self.db = _G.LibStub("AceDB-3.0"):New("GuildSearchDB", defaults, "Default")
 
     -- Register the options table
-    LibStub("AceConfig-3.0"):RegisterOptionsTable("GuildSearch", self:GetOptions())
-	self.optionsFrame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions(
+    _G.LibStub("AceConfig-3.0"):RegisterOptionsTable("GuildSearch", self:GetOptions())
+	self.optionsFrame = _G.LibStub("AceConfigDialog-3.0"):AddToBlizOptions(
 	    "GuildSearch", "Guild Search")
 
 	-- Create the guild frame
@@ -206,19 +211,19 @@ function GuildSearch:OnInitialize()
 		icon = "Interface\\Icons\\INV_Scroll_03.blp",
 		OnClick = function(clickedframe, button)
 		    if button == "RightButton" then
-    			local optionsFrame = InterfaceOptionsFrame
+    			local optionsFrame = _G.InterfaceOptionsFrame
 
     			if optionsFrame:IsVisible() then
     				optionsFrame:Hide()
     			else
     			    self:HideGuildWindow()
-    				InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
+    				_G.InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
     			end
             elseif button == "LeftButton" then
     			if self:IsWindowVisible() then
     				self:HideGuildWindow()
     			else
-        			local optionsFrame = InterfaceOptionsFrame
+        			local optionsFrame = _G.InterfaceOptionsFrame
     			    optionsFrame:Hide()
     				self:GuildSearchHandler("")
     			end
@@ -244,11 +249,11 @@ function GuildSearch:GuildSearchHandler(input)
 	guildFrame:Show()
 
 	-- Need to turn on offline display to be able to seach them
-	SetGuildRosterShowOffline(true)
+	_G.SetGuildRosterShowOffline(true)
 
 	-- Update the guild roster
-	if IsInGuild() then
-		GuildRoster()
+	if _G.IsInGuild() then
+		_G.GuildRoster()
 	end
 end
 
@@ -273,17 +278,17 @@ function GuildSearch:OnDisable()
 end
 
 function GuildSearch:PopulateGuildRanks()
-    local numRanks = GuildControlGetNumRanks()
+    local numRanks = _G.GuildControlGetNumRanks()
     local name
 
-    wipe(guildRanks)
+    _G.wipe(guildRanks)
 
     for i = 1, numRanks do
-        name = GuildControlGetRankName(i)
+        name = _G.GuildControlGetRankName(i)
         guildRanks[i] = name
     end
 
-	wipe(guildRanksRev)
+	_G.wipe(guildRanksRev)
 	for k,v in pairs(guildRanks) do
 		guildRanksRev[v] = k
 	end
@@ -292,24 +297,24 @@ function GuildSearch:PopulateGuildRanks()
 end
 
 function GuildSearch:PopulateGuildData()
-	wipe(guildData)
+	_G.wipe(guildData)
 	
-	if IsInGuild() then
-		local numMembers = GetNumGuildMembers()
+	if _G.IsInGuild() then
+		local numMembers = _G.GetNumGuildMembers()
 		for index = 1, numMembers do
 			local name, rank, rankIndex, level, class, zone, note, 
-				officernote, online, status, classFileName = GetGuildRosterInfo(index)
+				officernote, online, status, classFileName = _G.GetGuildRosterInfo(index)
 
-                local years, months, days, hours = GetGuildRosterLastOnline(index)
+                local years, months, days, hours = _G.GetGuildRosterLastOnline(index)
                 local lastOnline = 0
                 local lastOnlineDate = ""
                 if online then
-                    lastOnline = time()
-                    lastOnlineDate = date("%Y/%m/%d %H:%M", lastOnline)
+                    lastOnline = _G.time()
+                    lastOnlineDate = _G.date("%Y/%m/%d %H:%M", lastOnline)
                 elseif years and months and days and hours then
                     local diff = (((years*365)+(months*30)+days)*24+hours)*60*60
-                    lastOnline = time() - diff
-                    lastOnlineDate = date("%Y/%m/%d %H:00", lastOnline)
+                    lastOnline = _G.time() - diff
+                    lastOnlineDate = _G.date("%Y/%m/%d %H:00", lastOnline)
                 end
 
 				tinsert(guildData, 
@@ -338,7 +343,7 @@ function GuildSearch:GUILD_ROSTER_UPDATE(event, ...)
         if guildFrame and guildFrame.table then
             guildFrame.table:ClearSelection()
         end
-        GuildRoster()
+        _G.GuildRoster()
     end
 	self:PopulateGuildData()
 end
@@ -347,11 +352,11 @@ local invalidRankFmt = "Attempt to set member rank to an invalid rank. (%s)"
 local changingRankFmt = "Changing rank for %s from %s to %s."
 local noRankFoundFmt = "Invalid rank returned for roster id. (%s)"
 function GuildSearch:UpdateMemberDetail(name, publicNote, officerNote, newRankIndex)
-	if not IsInGuild() or name == nil or #name == 0 then
+	if not _G.IsInGuild() or name == nil or #name == 0 then
         return false
     end
 
-	local numMembers = GetNumGuildMembers()
+	local numMembers = _G.GetNumGuildMembers()
 	local i = 0
 	local charname, rank, rankIndex, level, class, zone, note, 
 		officernote, online, status, classFileName
@@ -359,20 +364,20 @@ function GuildSearch:UpdateMemberDetail(name, publicNote, officerNote, newRankIn
     while name ~= charname and i < numMembers do
         i = i + 1
 		charname, rank, rankIndex, level, class, zone, note, officernote,
-			online, status, classFileName = GetGuildRosterInfo(i)
+			online, status, classFileName = _G.GetGuildRosterInfo(i)
 	end
     
     if name == charname and i > 0 then
-        if publicNote and CanEditPublicNote() then
-            GuildRosterSetPublicNote(i, publicNote)
+        if publicNote and _G.CanEditPublicNote() then
+            _G.GuildRosterSetPublicNote(i, publicNote)
         end
 
-        if officerNote and CanEditOfficerNote() then
-            GuildRosterSetOfficerNote(i, officerNote)
+        if officerNote and _G.CanEditOfficerNote() then
+            _G.GuildRosterSetOfficerNote(i, officerNote)
         end
 
         if newRankIndex then
-            local numRanks = GuildControlGetNumRanks()
+            local numRanks = _G.GuildControlGetNumRanks()
 
             if newRankIndex < 0 or newRankIndex > numRanks then
                 self:Print(invalidRankFmt:format(newRankIndex or "nil"))
@@ -386,7 +391,7 @@ function GuildSearch:UpdateMemberDetail(name, publicNote, officerNote, newRankIn
                         self:Print(
                             changingRankFmt:format(charname, rankIndex, newRankIndex))
                     end
-                    SetGuildMemberRank(i, newRankIndex)
+                    _G.SetGuildMemberRank(i, newRankIndex)
                 end
             else
                 self:Print(noRankFoundFmt:format(i))
@@ -396,18 +401,18 @@ function GuildSearch:UpdateMemberDetail(name, publicNote, officerNote, newRankIn
 end
 
 function GuildSearch:RemoveGuildMember(name)
-    if CanGuildRemove() then
-        GuildUninvite(name)
+    if _G.CanGuildRemove() then
+        _G.GuildUninvite(name)
         memberDetailFrame:Hide()
     end
 end
 
 function GuildSearch:StaticPopupRemoveGuildMember(name)
-	StaticPopupDialogs["GuildSearch_RemoveGuildMember"] = 
-	    StaticPopupDialogs["GuildSearch_RemoveGuildMember"] or {
+	_G.StaticPopupDialogs["GuildSearch_RemoveGuildMember"] = 
+	    _G.StaticPopupDialogs["GuildSearch_RemoveGuildMember"] or {
 					text = L["GUILD_REMOVE_CONFIRMATION"], 
-					button1 = ACCEPT, 
-					button2 = CANCEL,
+					button1 = _G.ACCEPT, 
+					button2 = _G.CANCEL,
 					whileDead = true,
 					hideOnEscape = true,
 					showAlert = true,
@@ -417,19 +422,19 @@ function GuildSearch:StaticPopupRemoveGuildMember(name)
 					    GuildSearch:RemoveGuildMember(data)
 					end,
 				}
-    local dialog = StaticPopup_Show("GuildSearch_RemoveGuildMember", name)
+    local dialog = _G.StaticPopup_Show("GuildSearch_RemoveGuildMember", name)
     if dialog then
         dialog.data = name
     end
 end
 
 function GuildSearch:CreateMemberDetailsFrame()
-	local detailwindow = CreateFrame("Frame", "GuildSearch_DetailsWindow", UIParent)
+	local detailwindow = _G.CreateFrame("Frame", "GuildSearch_DetailsWindow", _G.UIParent)
 	detailwindow:SetFrameStrata("DIALOG")
 	detailwindow:SetToplevel(true)
 	detailwindow:SetWidth(400)
 	detailwindow:SetHeight(320)
-	detailwindow:SetPoint("CENTER", UIParent)
+	detailwindow:SetPoint("CENTER", _G.UIParent)
 	detailwindow:SetBackdrop(
 		{bgFile="Interface\\ChatFrame\\ChatFrameBackground", 
 	    edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border", tile=true,
@@ -440,7 +445,7 @@ function GuildSearch:CreateMemberDetailsFrame()
 	detailwindow.memberRank = 1
 	detailwindow.index = 0
 
-	local savebutton = CreateFrame("Button", nil, detailwindow, "UIPanelButtonTemplate")
+	local savebutton = _G.CreateFrame("Button", nil, detailwindow, "UIPanelButtonTemplate")
 	savebutton:SetText(L["Save"])
 	savebutton:SetWidth(100)
 	savebutton:SetHeight(20)
@@ -450,13 +455,13 @@ function GuildSearch:CreateMemberDetailsFrame()
 	        local frame = this:GetParent()
 	        local publicNote = frame.publicnote:GetText()
 	        local officerNote = frame.officernote:GetText()
-            local rank = UIDropDownMenu_GetSelectedValue(frame.rankDropdown)
+            local rank = _G.UIDropDownMenu_GetSelectedValue(frame.rankDropdown)
 	        self:UpdateMemberDetail(
 	            frame.charname:GetText(), publicNote, officerNote, rank)
 	        frame:Hide()
 	    end)
 
-	local cancelbutton = CreateFrame("Button", nil, detailwindow, "UIPanelButtonTemplate")
+	local cancelbutton = _G.CreateFrame("Button", nil, detailwindow, "UIPanelButtonTemplate")
 	cancelbutton:SetText(L["Cancel"])
 	cancelbutton:SetWidth(100)
 	cancelbutton:SetHeight(20)
@@ -479,17 +484,17 @@ function GuildSearch:CreateMemberDetailsFrame()
 	--rankLabel:SetTextColor(1.0,1.0,1.0,1)
 	rankLabel:SetText(L["Rank"]..":")
 
-    local rankDropdown = CreateFrame("Button", "GS_RankDropDown", detailwindow, "UIDropDownMenuTemplate")
+    local rankDropdown = _G.CreateFrame("Button", "GS_RankDropDown", detailwindow, "UIDropDownMenuTemplate")
     rankDropdown:ClearAllPoints()
     rankDropdown:SetPoint("TOPLEFT", rankLabel, "TOPRIGHT", 7, 5)
     rankDropdown:Show()
-    UIDropDownMenu_Initialize(rankDropdown, function(self, level)
+    _G.UIDropDownMenu_Initialize(rankDropdown, function(self, level)
         -- The following code is partially copied from Blizzard's code
         -- in Blizzard_GuildRoster.lua
 
-        local numRanks = GuildControlGetNumRanks()
+        local numRanks = _G.GuildControlGetNumRanks()
         -- Get the user's rank and adjust to 1-based
-        local _, _, userRankIndex = GetGuildInfo("player")
+        local _, _, userRankIndex = _G.GetGuildInfo("player")
         userRankIndex = userRankIndex + 1
         -- The current member's rank
         local memberRankIndex = self:GetParent().memberRank
@@ -497,47 +502,47 @@ function GuildSearch:CreateMemberDetailsFrame()
         -- Set the highest rank to 1 above the user's rank
         local highestRank = userRankIndex + 1
         -- If the user cannot promote, the highest rank is the current member's rank
-        if (not CanGuildPromote()) or userRankIndex >= memberRankIndex then
+        if (not _G.CanGuildPromote()) or userRankIndex >= memberRankIndex then
             highestRank = memberRankIndex
         end
         
         local lowestRank = numRanks
-        if (not CanGuildDemote()) or userRankIndex >= memberRankIndex then
+        if (not _G.CanGuildDemote()) or userRankIndex >= memberRankIndex then
             lowestRank = memberRankIndex
         end
 
         for i = highestRank, lowestRank do
-            local info = UIDropDownMenu_CreateInfo()
-            info.text = GuildControlGetRankName(i)
+            local info = _G.UIDropDownMenu_CreateInfo()
+            info.text = _G.GuildControlGetRankName(i)
             info.value = i
             info.arg1 = i
             info.colorCode = WHITE
             info.checked = i == memberRankIndex
             info.func = function(self) 
-                UIDropDownMenu_SetSelectedValue(rankDropdown, self.value)
+                _G.UIDropDownMenu_SetSelectedValue(rankDropdown, self.value)
             end
             -- If not the current rank, then check if the rank is allowed to be set
             -- In addition to rank restrictions, an authenticator can prohibit too
             if not info.checked then
-                local allowed, reason = IsGuildRankAssignmentAllowed(
+                local allowed, reason = _G.IsGuildRankAssignmentAllowed(
 					(self:GetParent().index or 0), i);
                 if not allowed and reason == "authenticator" then
                     info.disabled = true;
                     info.tooltipWhileDisabled = 1;
-                    info.tooltipTitle = GUILD_RANK_UNAVAILABLE;
-                    info.tooltipText = GUILD_RANK_UNAVAILABLE_AUTHENTICATOR;
+                    info.tooltipTitle = _G.GUILD_RANK_UNAVAILABLE;
+                    info.tooltipText = _G.GUILD_RANK_UNAVAILABLE_AUTHENTICATOR;
                     info.tooltipOnButton = 1;
                 end
             end
-            UIDropDownMenu_AddButton(info, level)
+            _G.UIDropDownMenu_AddButton(info, level)
         end
     end)
-    UIDropDownMenu_SetWidth(rankDropdown, 100);
-    UIDropDownMenu_SetButtonWidth(rankDropdown, 124)
-    UIDropDownMenu_SetSelectedValue(rankDropdown, 0)
-    UIDropDownMenu_JustifyText(rankDropdown, "LEFT")
+    _G.UIDropDownMenu_SetWidth(rankDropdown, 100);
+    _G.UIDropDownMenu_SetButtonWidth(rankDropdown, 124)
+    _G.UIDropDownMenu_SetSelectedValue(rankDropdown, 0)
+    _G.UIDropDownMenu_JustifyText(rankDropdown, "LEFT")
 
-	local removebutton = CreateFrame("Button", nil, detailwindow, "UIPanelButtonTemplate")
+	local removebutton = _G.CreateFrame("Button", nil, detailwindow, "UIPanelButtonTemplate")
 	removebutton:SetText(L["Remove"])
 	removebutton:SetWidth(100)
 	removebutton:SetHeight(20)
@@ -555,7 +560,7 @@ function GuildSearch:CreateMemberDetailsFrame()
 	noteHeader:SetPoint("TOPLEFT", rankLabel, "BOTTOMLEFT", 0, -15)
 	noteHeader:SetText(L["Public Note"]..":")
 
-    local publicNoteContainer = CreateFrame("Frame", nil, detailwindow)
+    local publicNoteContainer = _G.CreateFrame("Frame", nil, detailwindow)
     publicNoteContainer:SetPoint("TOPLEFT", noteHeader, "BOTTOMLEFT", 0, -8)
     publicNoteContainer:SetHeight(50)
     publicNoteContainer:SetWidth(340)
@@ -567,12 +572,12 @@ function GuildSearch:CreateMemberDetailsFrame()
 		tileSize=16, edgeSize=16, insets={left=4, right=3, top=4, bottom=3}})
 	publicNoteContainer:SetBackdropColor(0,0,0,0.9)
 
-    local noteScrollArea = CreateFrame("ScrollFrame", "GS_MemberDetails_PublicNoteScroll", detailwindow, "UIPanelScrollFrameTemplate")
+    local noteScrollArea = _G.CreateFrame("ScrollFrame", "GS_MemberDetails_PublicNoteScroll", detailwindow, "UIPanelScrollFrameTemplate")
     noteScrollArea:SetPoint("TOPLEFT", publicNoteContainer, "TOPLEFT", 6, -6)
     noteScrollArea:SetPoint("BOTTOMRIGHT", publicNoteContainer, "BOTTOMRIGHT", -6, 6)
 
-	local notebox = CreateFrame("EditBox", "GS_MemberDetails_PublicNoteBox", detailwindow)
-	notebox:SetFontObject(ChatFontNormal)
+	local notebox = _G.CreateFrame("EditBox", "GS_MemberDetails_PublicNoteBox", detailwindow)
+	notebox:SetFontObject(_G.ChatFontNormal)
 	notebox:SetMultiLine(true)
 	notebox:SetAutoFocus(true)
 	notebox:SetWidth(300)
@@ -603,7 +608,7 @@ function GuildSearch:CreateMemberDetailsFrame()
 	onoteHeader:SetPoint("TOPLEFT", publicNoteContainer, "BOTTOMLEFT", 0, -15)
 	onoteHeader:SetText(L["Officer Note"]..":")
 
-    local officerNoteContainer = CreateFrame("Frame", nil, detailwindow)
+    local officerNoteContainer = _G.CreateFrame("Frame", nil, detailwindow)
     officerNoteContainer:SetPoint("TOPLEFT", onoteHeader, "BOTTOMLEFT", 0, -8)
     officerNoteContainer:SetHeight(50)
     officerNoteContainer:SetWidth(340)
@@ -615,12 +620,12 @@ function GuildSearch:CreateMemberDetailsFrame()
 		tileSize=16, edgeSize=16, insets={left=4, right=3, top=4, bottom=3}})
 	officerNoteContainer:SetBackdropColor(0,0,0,0.9)
 
-    local onoteScrollArea = CreateFrame("ScrollFrame", "GS_MemberDetails_OfficerNoteScroll", detailwindow, "UIPanelScrollFrameTemplate")
+    local onoteScrollArea = _G.CreateFrame("ScrollFrame", "GS_MemberDetails_OfficerNoteScroll", detailwindow, "UIPanelScrollFrameTemplate")
     onoteScrollArea:SetPoint("TOPLEFT", officerNoteContainer, "TOPLEFT", 6, -6)
     onoteScrollArea:SetPoint("BOTTOMRIGHT", officerNoteContainer, "BOTTOMRIGHT", -6, 6)
 
-	local onotebox = CreateFrame("EditBox", "GS_MemberDetails_OfficerNoteBox", detailwindow)
-	onotebox:SetFontObject(ChatFontNormal)
+	local onotebox = _G.CreateFrame("EditBox", "GS_MemberDetails_OfficerNoteBox", detailwindow)
+	onotebox:SetFontObject(_G.ChatFontNormal)
 	onotebox:SetMultiLine(true)
 	onotebox:SetAutoFocus(true)
 	onotebox:SetWidth(300)
@@ -681,13 +686,13 @@ function GuildSearch:ShowGuildMemberDetailsFrame(name, publicNote, officerNote, 
 	frame:SetCallback("OnClose", function(widget)
 		widget:ReleaseChildren()
 		widget:Release()
-		EditNoteFrame = nil
+		MemberDetailsFrame = nil
 	end)
     MemberDetailsFrame = frame
 
     local text =  AGU:Create("Label")
     text:SetText(name)
-    text:SetFont(GameFontNormalLarge:GetFont())
+    text:SetFont(_G.GameFontNormalLarge:GetFont())
     text.label:SetJustifyH("CENTER")
     text:SetFullWidth(true)
     text:SetCallback("OnRelease",
@@ -704,7 +709,7 @@ function GuildSearch:ShowGuildMemberDetailsFrame(name, publicNote, officerNote, 
 
     local notebox = AGU:Create("MultiLineEditBox")
     notebox:SetFullWidth(true)
-    notebox:SetText(note)
+    notebox:SetText(publicNote)
     notebox:SetLabel(L["Public Note"])
     notebox:SetNumLines(5)
     notebox:SetMaxLetters(0)
@@ -717,7 +722,7 @@ function GuildSearch:ShowGuildMemberDetailsFrame(name, publicNote, officerNote, 
 
     local onotebox = AGU:Create("MultiLineEditBox")
     onotebox:SetFullWidth(true)
-    onotebox:SetText(note)
+    onotebox:SetText(officerNote)
     onotebox:SetLabel(L["Officer Note"])
     onotebox:SetNumLines(5)
     onotebox:SetMaxLetters(0)
@@ -757,18 +762,18 @@ end
 function GuildSearch:UpdateMemberRank(rank)
     local memberRankIndex = rank + 1
     if memberDetailFrame then
-    	UIDropDownMenu_SetSelectedValue(memberDetailFrame.rankDropdown, memberRankIndex)
+    	_G.UIDropDownMenu_SetSelectedValue(memberDetailFrame.rankDropdown, memberRankIndex)
     	if guildRanks[memberRankIndex] then
-            UIDropDownMenu_SetText(
+            _G.UIDropDownMenu_SetText(
                 memberDetailFrame.rankDropdown, WHITE..guildRanks[memberRankIndex].."|r")
         end
 
-        local _, _, userRankIndex = GetGuildInfo("player")
+        local _, _, userRankIndex = _G.GetGuildInfo("player")
 
         if rank <= userRankIndex then
             -- Disable since you cannot change an equal or higher ranked char.
             memberDetailFrame.rankDropdown:Disable()
-        elseif CanGuildPromote() or CanGuildDemote() then
+        elseif _G.CanGuildPromote() or _G.CanGuildDemote() then
             memberDetailFrame.rankDropdown:Enable()
         else
             memberDetailFrame.rankDropdown:Disable()
@@ -787,19 +792,19 @@ function GuildSearch:ShowMemberDetails(name, publicNote, officerNote, rank, inde
             detailwindow.memberRank = rank + 1
             detailwindow.index = index
 
-            if CanEditPublicNote() then
+            if _G.CanEditPublicNote() then
                 detailwindow.publicnote:Enable()
             else
                 detailwindow.publicnote:Disable()
             end
 
-            if CanEditOfficerNote() then
+            if _G.CanEditOfficerNote() then
                 detailwindow.officernote:Enable()
             else
                 detailwindow.officernote:Disable()
             end
 
-            if CanGuildRemove() then
+            if _G.CanGuildRemove() then
                 detailwindow.removebutton:Show()
             else
                 detailwindow.removebutton:Hide()
@@ -814,17 +819,17 @@ function GuildSearch:ShowMemberDetails(name, publicNote, officerNote, rank, inde
 end
 
 function GuildSearch:CreateGuildFrame()
-	local guildwindow = CreateFrame("Frame", "GuildSearchWindow", UIParent)
+	local guildwindow = _G.CreateFrame("Frame", "GuildSearchWindow", _G.UIParent)
 	guildwindow:SetFrameStrata("DIALOG")
 	guildwindow:SetToplevel(true)
 	guildwindow:SetWidth(700)
 	guildwindow:SetHeight(450)
 
 	if self.db.profile.remember_main_pos then
-        guildwindow:SetPoint("CENTER", UIParent, "CENTER",
+        guildwindow:SetPoint("CENTER", _G.UIParent, "CENTER",
             self.db.profile.main_window_x, self.db.profile.main_window_y)
     else
-	    guildwindow:SetPoint("CENTER", UIParent)
+	    guildwindow:SetPoint("CENTER", _G.UIParent)
     end
 
     guildwindow.lock = self.db.profile.lock_main_window
@@ -833,7 +838,7 @@ function GuildSearch:CreateGuildFrame()
 	    edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border", tile=true,
 		tileSize=32, edgeSize=32, insets={left=11, right=12, top=12, bottom=11}})
 
-	local ScrollingTable = LibStub("ScrollingTable");
+	local ScrollingTable = _G.LibStub("ScrollingTable");
 
 	local cols = {}
 	cols[1] = {
@@ -848,7 +853,7 @@ function GuildSearch:CreateGuildFrame()
 					className = "DEATHKNIGHT"
 				end
 			end
-			return RAID_CLASS_COLORS[className] or WHITE_VALUE
+			return _G.RAID_CLASS_COLORS[className] or WHITE_VALUE
 		end,
 		["colorargs"] = nil,
 		["bgcolor"] = {
@@ -939,24 +944,24 @@ function GuildSearch:CreateGuildFrame()
 		["comparesort"] = function (st, rowa, rowb, col)
 				local cella, cellb = st:GetCell(rowa, col), st:GetCell(rowb, col);
 				local a1, b1 = cella, cellb;
-				if type(a1) == 'table' then  
+				if _G.type(a1) == 'table' then  
 					a1 = a1.value; 
 				end
-				if type(b1) == 'table' then 
+				if _G.type(b1) == 'table' then 
 					b1 = b1.value;
 				end 
 				local column = st.cols[col];
 		
-				if type(a1) == "function" then 
+				if _G.type(a1) == "function" then 
 					if (cella.args) then 
-						a1 = a1(unpack(cella.args))
+						a1 = a1(_G.unpack(cella.args))
 					else
 						a1 = a1(st.data, self.cols, rowa, col, st);
 					end
 				end
-				if type(b1) == "function" then 
+				if _G.type(b1) == "function" then 
 					if (cellb.args) then 
-						b1 = b1(unpack(cellb.args))
+						b1 = b1(_G.unpack(cellb.args))
 					else	
 						b1 = b1(st.data, st.cols, rowb, col, st);
 					end
@@ -1023,8 +1028,8 @@ function GuildSearch:CreateGuildFrame()
 	headertext:SetPoint("TOP", guildwindow, "TOP", 0, -20)
 	headertext:SetText(L["Guild Search"])
 
-	local searchterm = CreateFrame("EditBox", nil, guildwindow, "InputBoxTemplate")
-	searchterm:SetFontObject(ChatFontNormal)
+	local searchterm = _G.CreateFrame("EditBox", nil, guildwindow, "InputBoxTemplate")
+	searchterm:SetFontObject(_G.ChatFontNormal)
 	searchterm:SetWidth(300)
 	searchterm:SetHeight(35)
 	searchterm:SetPoint("TOPLEFT", guildwindow, "TOPLEFT", 30, -50)
@@ -1043,7 +1048,7 @@ function GuildSearch:CreateGuildFrame()
 	table.frame:SetPoint("TOP", searchterm, "BOTTOM", 0, -20)
 	table.frame:SetPoint("LEFT", guildwindow, "LEFT", 25, 0)
 
-	local searchbutton = CreateFrame("Button", nil, guildwindow, "UIPanelButtonTemplate")
+	local searchbutton = _G.CreateFrame("Button", nil, guildwindow, "UIPanelButtonTemplate")
 	searchbutton:SetText(L["Search"])
 	searchbutton:SetWidth(100)
 	searchbutton:SetHeight(20)
@@ -1054,7 +1059,7 @@ function GuildSearch:CreateGuildFrame()
 	        self:UpdateRowCount()
 	    end)
 
-	local clearbutton = CreateFrame("Button", nil, guildwindow, "UIPanelButtonTemplate")
+	local clearbutton = _G.CreateFrame("Button", nil, guildwindow, "UIPanelButtonTemplate")
 	clearbutton:SetText(L["Clear"])
 	clearbutton:SetWidth(100)
 	clearbutton:SetHeight(20)
@@ -1069,7 +1074,7 @@ function GuildSearch:CreateGuildFrame()
 	local rowcounttext = guildwindow:CreateFontString("GS_Main_RowCountText", guildwindow, "GameFontNormalSmall")
 	rowcounttext:SetPoint("BOTTOMLEFT", guildwindow, "BOTTOMLEFT", 20, 20)
 
-	local editbutton = CreateFrame("Button", nil, guildwindow, "UIPanelButtonTemplate")
+	local editbutton = _G.CreateFrame("Button", nil, guildwindow, "UIPanelButtonTemplate")
 	editbutton:SetText(L["Edit"])
 	editbutton:SetWidth(90)
 	editbutton:SetHeight(20)
@@ -1087,7 +1092,7 @@ function GuildSearch:CreateGuildFrame()
 			end
 		end)
 
-	local closebutton = CreateFrame("Button", nil, guildwindow, "UIPanelButtonTemplate")
+	local closebutton = _G.CreateFrame("Button", nil, guildwindow, "UIPanelButtonTemplate")
 	closebutton:SetText(L["Close"])
 	closebutton:SetWidth(90)
 	closebutton:SetHeight(20)
@@ -1146,11 +1151,11 @@ function GuildSearch:CreateGuildFrame()
         function(self)
             self:StopMovingOrSizing()
 			if GuildSearch.db.profile.remember_main_pos then
-    			local scale = self:GetEffectiveScale() / UIParent:GetEffectiveScale()
+    			local scale = self:GetEffectiveScale() / _G.UIParent:GetEffectiveScale()
     			local x, y = self:GetCenter()
     			x, y = x * scale, y * scale
-    			x = x - GetScreenWidth()/2
-    			y = y - GetScreenHeight()/2
+    			x = x - _G.GetScreenWidth()/2
+    			y = y - _G.GetScreenHeight()/2
     			x = x / self:GetScale()
     			y = y / self:GetScale()
     			GuildSearch.db.profile.main_window_x, 
@@ -1168,7 +1173,7 @@ end
 function GuildSearch:UpdateRowCount()
     local table = guildFrame.table
     local count = 0
-    if table and table.filtered and type(table.filtered) == "table" then
+    if table and table.filtered and _G.type(table.filtered) == "table" then
         count = #table.filtered
     end
     

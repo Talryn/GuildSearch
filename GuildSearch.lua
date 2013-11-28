@@ -29,18 +29,63 @@ local WHITE_VALUE = {
 	["a"] = 1.0
 }
 
+local function formatRealmName(realm)
+	-- Spaces are removed.
+	-- Dashes are removed. (e.g., Azjol-Nerub)
+	-- Apostrophe / single quotes are not removed.
+	if not realm then return end
+	return realm:gsub("[ -]", "")
+end
+
+local function parseName(name)
+	if not name then return end
+	local matches = name:gmatch("([^%-]+)")
+	if matches then
+		local nameOnly = matches()
+		local realm = matches()
+		return nameOnly, realm
+	end
+	return nil
+end
+
+local ColumnWidths = {
+	["default"] = {
+		window = 700,
+		name = 110,
+		level = 40,
+		note = 150,
+		onote = 80,
+		rank = 60,
+		lastOnline = 100,
+		optional = 60,
+	},
+	["1000"] = {
+		window = 1000,
+		name = 200,
+		level = 50,
+		note = 200,
+		onote = 150,
+		rank = 100,
+		lastOnline = 100,
+		optional = 100,
+	},
+}
+
 local defaults = {
 	profile = {
 		minimap = {
 			hide = true,
 		},
+		columnWidths = ColumnWidths["default"],
 		verbose = false,
 		searchNames = true,
 		searchNotes = true,
 		searchOfficerNotes = true,
 		searchRank = false,
 		searchClass = false,
+		searchRealm = false,
 		patternMatching = false,
+		optionalColumn = "Realm",
 		remember_main_pos = true,
 		lock_main_window = false,
 		main_window_x = 0,
@@ -55,16 +100,32 @@ local guildData = {}
 local memberDetailFrame = nil
 local guildRanks = {}
 local guildRanksRev = {}
+local realmName = _G.GetRealmName()
+local realmNameAbbrv = formatRealmName(realmName)
 
 local NAME_COL = 1
+local LEVEL_COL = 2
 local NOTE_COL = 3
 local ONOTE_COL = 4
 local RANK_COL = 5
 local LASTONLINE_COL = 6
-local RANKNUM_COL = 8
-local INDEX_COL = 9
+local OPTIONAL_COL = 7
+local REALM_COL = 8
+local WEEKLYXP_COL = 9
+local TOTALXP_COL = 10
+local WEEKLYRANK_COL = 11
+local TOTALRANK_COL = 12
+local CLASS_COL = 13
+local RANKNUM_COL = 14
+local INDEX_COL = 15
 
 local options
+
+function GuildSearch:ResetColumnWidths(name)
+	for k, v in pairs(ColumnWidths[name or "default"]) do
+		self.db.profile.columnWidths[k] = v
+	end
+end
 
 function GuildSearch:GetOptions()
     if not options then
@@ -150,13 +211,21 @@ function GuildSearch:GetOptions()
                     get = function(info) return self.db.profile.searchClass end,
         			order = 150
                 },
+                searchRealms = {
+                    name = L["Search Realms"],
+                    desc = L["SearchRealms_Desc"],
+                    type = "toggle",
+                    set = function(info, val) self.db.profile.searchRealm = val end,
+                    get = function(info) return self.db.profile.searchRealm end,
+        			order = 160
+                },
                 patternMatching = {
                     name = L["Enable Pattern Matching"],
                     desc = L["Enables pattern matching when searching the guild data."],
                     type = "toggle",
                     set = function(info, val) self.db.profile.patternMatching = val end,
                     get = function(info) return self.db.profile.patternMatching end,
-        			order = 160
+        			order = 170
                 },
         		headerMainWindow = {
         			order = 200,
@@ -182,8 +251,197 @@ function GuildSearch:GetOptions()
                     get = function(info) return self.db.profile.remember_main_pos end,
         			order = 220
                 },
-
-            }
+        		headerAdvanced = {
+        			order = 300,
+        			type = "header",
+        			name = L["Advanced Settings"],
+        		},
+        		advancedDesc = {
+        			order = 310,
+        			type = "description",
+        			name = L["Advanced_Desc"],
+        		},
+				optionalColumn = {
+					name = L["Optional Column"],
+					desc = L["OptionalColumn_Desc"],
+					type = "select",
+					values = {
+					    ["Realm"] = L["Realm"],
+					    ["TotalXP"] = L["Total XP"],
+					    ["WeeklyXP"] = L["Weekly XP"],
+					    ["TotalRank"] = L["Total Rank"],
+					    ["WeeklyRank"] = L["Weekly Rank"],
+					},
+					order = 320,
+					set = function(info, val)
+					    self.db.profile.optionalColumn = val
+					end,
+	                get = function(info)
+	                    return self.db.profile.optionalColumn
+	                end,
+				},
+        		columnWidthHdr = {
+        			order = 400,
+        			type = "header",
+        			name = L["Column Widths"],
+        		},
+        		columnWidthDesc = {
+        			order = 410,
+        			type = "description",
+        			name = L["ColumnWidths_Desc"],
+        		},
+				columnWidthWindow = {
+					order = 415,
+					name = L["Window"],
+					desc = L["Window_Desc"],
+					type = "range",
+					min = 0,
+					max = 3000,
+					width = "full",
+					step = 1,
+					set = function(info, val) 
+						self.db.profile.columnWidths.window = val
+					end,
+					get = function(info,val) return
+						self.db.profile.columnWidths.window
+					end,
+				},
+				columnWidthName = {
+					order = 420,
+					name = L["Name"],
+					desc = L["Name"],
+					type = "range",
+					min = 0,
+					max = 300,
+					step = 1,
+					set = function(info, val) 
+						self.db.profile.columnWidths.name = val
+					end,
+					get = function(info,val) return
+						self.db.profile.columnWidths.name
+					end,
+				},
+				columnWidthLevel = {
+					order = 430,
+					name = L["Level"],
+					desc = L["Level"],
+					type = "range",
+					min = 0,
+					max = 300,
+					step = 1,
+					set = function(info, val) 
+						self.db.profile.columnWidths.level = val
+					end,
+					get = function(info,val) return
+						self.db.profile.columnWidths.level
+					end,
+				},
+				columnWidthNote = {
+					order = 440,
+					name = L["Note"],
+					desc = L["Note"],
+					type = "range",
+					min = 0,
+					max = 300,
+					step = 1,
+					set = function(info, val) 
+						self.db.profile.columnWidths.note = val
+					end,
+					get = function(info,val) return
+						self.db.profile.columnWidths.note
+					end,
+				},
+				columnWidthOfficerNote = {
+					order = 450,
+					name = L["Officer Note"],
+					desc = L["Officer Note"],
+					type = "range",
+					min = 0,
+					max = 300,
+					step = 1,
+					set = function(info, val) 
+						self.db.profile.columnWidths.onote = val
+					end,
+					get = function(info,val) return
+						self.db.profile.columnWidths.onote
+					end,
+				},
+				columnWidthRank = {
+					order = 460,
+					name = L["Rank"],
+					desc = L["Rank"],
+					type = "range",
+					min = 0,
+					max = 300,
+					step = 1,
+					set = function(info, val) 
+						self.db.profile.columnWidths.rank = val
+					end,
+					get = function(info,val) return
+						self.db.profile.columnWidths.rank
+					end,
+				},
+				columnWidthLastOnline = {
+					order = 470,
+					name = L["Last Online"],
+					desc = L["Last Online"],
+					type = "range",
+					min = 0,
+					max = 300,
+					step = 1,
+					set = function(info, val) 
+						self.db.profile.columnWidths.lastOnline = val
+					end,
+					get = function(info,val) return
+						self.db.profile.columnWidths.lastOnline
+					end,
+				},
+				columnWidthOptional = {
+					order = 480,
+					name = L["Optional"],
+					desc = L["Optional"],
+					type = "range",
+					min = 0,
+					max = 300,
+					step = 1,
+					set = function(info, val) 
+						self.db.profile.columnWidths.optional = val
+					end,
+					get = function(info,val) return
+						self.db.profile.columnWidths.optional
+					end,
+				},
+				widthReset = {
+					name = L["Reset to Defaults"],
+					desc = L["Reset_Desc"],
+					type = "execute",
+					order = 500,
+					width = "full",
+					func = function()
+						self:ResetColumnWidths()
+					end,
+				},
+				widthReset1000 = {
+					name = L["Reset to 1000 pixel"],
+					desc = L["Reset1000_Desc"],
+					type = "execute",
+					order = 501,
+					width = "full",
+					func = function()
+						self:ResetColumnWidths("1000")
+					end,
+				},
+				reloadUI = {
+					name = L["Reload UI"],
+					desc = L["ReloadUI_Desc"],
+					type = "execute",
+					order = 502,
+					width = "full",
+					func = function()
+						_G.ReloadUI()
+					end,
+				},
+			},
         }
     end
 
@@ -193,6 +451,7 @@ end
 function GuildSearch:OnInitialize()
     -- Called when the addon is loaded
     self.db = _G.LibStub("AceDB-3.0"):New("GuildSearchDB", defaults, "Default")
+	self.optionalColumn = self.db.profile.optionalColumn
 
     -- Register the options table
     _G.LibStub("AceConfig-3.0"):RegisterOptionsTable("GuildSearch", self:GetOptions())
@@ -300,12 +559,18 @@ function GuildSearch:PopulateGuildData()
 	_G.wipe(guildData)
 	
 	if _G.IsInGuild() then
+		local guildName, gRank, gRankIndex, realm = _G.GetGuildInfo("player")
+		local guildRealm = formatRealmName(realm)
+
 		local numMembers = _G.GetNumGuildMembers()
 		for index = 1, numMembers do
 			local name, rank, rankIndex, level, class, zone, note, 
 				officernote, online, status, classFileName = _G.GetGuildRosterInfo(index)
 
+				local nameOnly, realmOnly = parseName(name)
+				local charRealm = realmOnly or guildRealm or realmNameAbbrv or ""
                 local years, months, days, hours = _G.GetGuildRosterLastOnline(index)
+		        local weeklyXP, totalXP, weeklyRank, totalRank = _G.GetGuildRosterContribution(index)
                 local lastOnline = 0
                 local lastOnlineDate = ""
                 if online then
@@ -317,9 +582,23 @@ function GuildSearch:PopulateGuildData()
                     lastOnlineDate = _G.date("%Y/%m/%d %H:00", lastOnline)
                 end
 
+				local optional = ""
+				if self.optionalColumn == "TotalXP" then
+					optional = totalXP
+				elseif self.optionalColumn == "WeeklyXP" then
+					optional = weeklyXP
+				elseif self.optionalColumn == "TotalRank" then
+					optional = totalRank
+				elseif self.optionalColumn == "WeeklyRank" then
+					optional = weeklyRank
+				else
+					optional = charRealm
+				end
+
 				tinsert(guildData, 
 				    {name,level,note,officernote,rank,
-				     lastOnlineDate, classFileName, rankIndex, index})
+				     lastOnlineDate, optional, charRealm, weeklyXP, totalXP, 
+					 weeklyRank, totalRank, classFileName, rankIndex, index})
 		end
 	end
 
@@ -822,7 +1101,7 @@ function GuildSearch:CreateGuildFrame()
 	local guildwindow = _G.CreateFrame("Frame", "GuildSearchWindow", _G.UIParent)
 	guildwindow:SetFrameStrata("DIALOG")
 	guildwindow:SetToplevel(true)
-	guildwindow:SetWidth(700)
+	guildwindow:SetWidth(self.db.profile.columnWidths.window)
 	guildwindow:SetHeight(450)
 
 	if self.db.profile.remember_main_pos then
@@ -843,12 +1122,12 @@ function GuildSearch:CreateGuildFrame()
 	local cols = {}
 	cols[1] = {
 		["name"] = L["Name"],
-		["width"] = 100,
+		["width"] = self.db.profile.columnWidths.name or 50,
 		["align"] = "LEFT",
 		["color"] = function(data, cols, realrow, column, table)
 			local className
-			if data[realrow] and data[realrow][7] then
-				className = data[realrow][7]:upper()
+			if data[realrow] and data[realrow][CLASS_COL] then
+				className = data[realrow][CLASS_COL]:upper()
 				if className == "DEATH KNIGHT" then
 					className = "DEATHKNIGHT"
 				end
@@ -868,7 +1147,7 @@ function GuildSearch:CreateGuildFrame()
 	}
 	cols[2] = {
 		["name"] = L["Level"],
-		["width"] = 40,
+		["width"] = self.db.profile.columnWidths.level or 50,
 		["align"] = "LEFT",
 		["color"] = {
 			["r"] = 1.0,
@@ -888,7 +1167,7 @@ function GuildSearch:CreateGuildFrame()
 	}
 	cols[3] = {
 		["name"] = L["Note"],
-		["width"] = 180,
+		["width"] = self.db.profile.columnWidths.note or 50,
 		["align"] = "LEFT",
 		["color"] = {
 			["r"] = 1.0,
@@ -907,7 +1186,7 @@ function GuildSearch:CreateGuildFrame()
 	}
 	cols[4] = {
 		["name"] = L["Officer Note"],
-		["width"] = 120,
+		["width"] = self.db.profile.columnWidths.onote or 50,
 		["align"] = "LEFT",
 		["color"] = {
 			["r"] = 1.0,
@@ -926,7 +1205,7 @@ function GuildSearch:CreateGuildFrame()
 	}
 	cols[5] = {
 		["name"] = L["Rank"],
-		["width"] = 60,
+		["width"] = self.db.profile.columnWidths.rank or 50,
 		["align"] = "LEFT",
 		["color"] = {
 			["r"] = 1.0,
@@ -1002,7 +1281,7 @@ function GuildSearch:CreateGuildFrame()
 	}
 	cols[6] = {
 		["name"] = L["Last Online"],
-		["width"] = 100,
+		["width"] = self.db.profile.columnWidths.lastOnline or 50,
 		["align"] = "LEFT",
 		["color"] = {
 			["r"] = 1.0,
@@ -1021,6 +1300,40 @@ function GuildSearch:CreateGuildFrame()
 		["sort"] = "dsc",
 		["DoCellUpdate"] = nil,
 	}
+	cols[OPTIONAL_COL] = {
+		--["name"] = L["Realm"],
+		["width"] = self.db.profile.columnWidths.optional or 50,
+		["align"] = "RIGHT",
+		["color"] = {
+			["r"] = 1.0,
+			["g"] = 1.0,
+			["b"] = 1.0,
+			["a"] = 1.0
+		},
+		["colorargs"] = nil,
+		["bgcolor"] = {
+			["r"] = 0.0,
+			["g"] = 0.0,
+			["b"] = 0.0,
+			["a"] = 1.0
+		},
+		["sortnext"]= 1,
+		["sort"] = "dsc",
+		["DoCellUpdate"] = nil,
+	}
+
+	if self.optionalColumn == "TotalXP" then
+		cols[OPTIONAL_COL].name = L["Total XP"]
+	elseif self.optionalColumn == "WeeklyXP" then
+		cols[OPTIONAL_COL].name = L["Weekly XP"]
+	elseif self.optionalColumn == "TotalRank" then
+		cols[OPTIONAL_COL].name = L["Total Rank"]
+	elseif self.optionalColumn == "WeeklyRank" then
+		cols[OPTIONAL_COL].name = L["Weekly Rank"]
+	else
+		cols[OPTIONAL_COL].name = L["Realm"]
+		cols[OPTIONAL_COL].align = "LEFT"
+	end
 
 	local table = ScrollingTable:CreateST(cols, 19, nil, nil, guildwindow);
 
@@ -1122,11 +1435,12 @@ function GuildSearch:CreateGuildFrame()
 			if term and #term > 0 then
 				term = term:lower()
 				local plain = not GuildSearch.db.profile.patternMatching
-				if ((profile.searchNames and row[1]:lower():find(term,1,plain)) or
-					(profile.searchNotes and row[3]:lower():find(term,1,plain)) or
-					(profile.searchOfficerNotes and row[4]:lower():find(term,1,plain)) or 
-					(profile.searchRank and row[5]:lower():find(term,1,plain)) or			
-					(profile.searchClass and row[7]:lower():find(term,1,plain))) then
+				if ((profile.searchNames and row[NAME_COL]:lower():find(term,1,plain)) or
+					(profile.searchNotes and row[NOTE_COL]:lower():find(term,1,plain)) or
+					(profile.searchOfficerNotes and row[ONOTE_COL]:lower():find(term,1,plain)) or 
+					(profile.searchRank and row[RANK_COL]:lower():find(term,1,plain)) or			
+					(profile.searchClass and row[CLASS_COL]:lower():find(term,1,plain)) or
+					(profile.searchRealm and row[REALM_COL]:lower():find(term,1,plain))) then
 					return true
 				end
 

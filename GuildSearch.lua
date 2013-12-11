@@ -90,6 +90,7 @@ local defaults = {
 		lock_main_window = false,
 		main_window_x = 0,
 		main_window_y = 0,
+		hideOnEsc = true,
 	}
 }
 
@@ -165,6 +166,14 @@ function GuildSearch:GetOptions()
                     set = function(info, val) self.db.profile.verbose = val end,
                     get = function(info) return self.db.profile.verbose end,
         			order = 20
+                },
+        	    hideOnEsc = {
+                    name = L["Hide on Escape"],
+                    desc = L["HideOnEsc_Desc"],
+                    type = "toggle",
+                    set = function(info, val) self.db.profile.hideOnEsc = val end,
+                    get = function(info) return self.db.profile.hideOnEsc end,
+        			order = 30
                 },
         		displayheader2 = {
         			order = 100,
@@ -693,7 +702,7 @@ function GuildSearch:StaticPopupRemoveGuildMember(name)
 					button1 = _G.ACCEPT, 
 					button2 = _G.CANCEL,
 					whileDead = true,
-					hideOnEscape = true,
+					hideOnEscape = self.db.profile.hideOnEsc,
 					showAlert = true,
 					timeout = 0,
                     enterClicksFirstButton = false,
@@ -863,11 +872,13 @@ function GuildSearch:CreateMemberDetailsFrame()
 	notebox:SetHeight(2*14)
 	notebox:SetMaxLetters(0)
 	notebox:SetScript("OnShow", function(this) notebox:SetFocus() end)
-	notebox:SetScript("OnEscapePressed",
-	    function(this)
-	        this:SetText("")
-	        this:GetParent():GetParent():Hide()
-	    end)
+	if self.db.profile.hideOnEsc then
+		notebox:SetScript("OnEscapePressed",
+		    function(this)
+		        this:SetText("")
+		        this:GetParent():GetParent():Hide()
+		    end)
+	end
 	notebox.scrollArea = noteScrollArea
     notebox:SetScript("OnCursorChanged", function(self, _, y, _, cursorHeight)
     	self, y = self.scrollArea, -y
@@ -911,11 +922,13 @@ function GuildSearch:CreateMemberDetailsFrame()
 	onotebox:SetHeight(2*14)
 	onotebox:SetMaxLetters(0)
 	--onotebox:SetScript("OnShow", function(this) onotebox:SetFocus() end)
-	onotebox:SetScript("OnEscapePressed",
-	    function(this)
-	        this:SetText("")
-	        this:GetParent():GetParent():Hide()
-	    end)
+	if self.db.profile.hideOnEsc then
+		onotebox:SetScript("OnEscapePressed",
+		    function(this)
+		        this:SetText("")
+		        this:GetParent():GetParent():Hide()
+		    end)
+	end
 	onotebox.scrollArea = onoteScrollArea
     onotebox:SetScript("OnCursorChanged", function(self, _, y, _, cursorHeight)
     	self, y = self.scrollArea, -y
@@ -1352,11 +1365,13 @@ function GuildSearch:CreateGuildFrame()
 	        table:SortData()
 	        self:UpdateRowCount()
 	    end)
-	searchterm:SetScript("OnEscapePressed",
-	    function(this)
-	        this:SetText("")
-	        this:GetParent():Hide()
-	    end)
+	if self.db.profile.hideOnEsc then
+		searchterm:SetScript("OnEscapePressed",
+		    function(this)
+		        this:SetText("")
+		        this:GetParent():Hide()
+		    end)
+	end
 
 	table.frame:SetPoint("TOP", searchterm, "BOTTOM", 0, -20)
 	table.frame:SetPoint("LEFT", guildwindow, "LEFT", 25, 0)

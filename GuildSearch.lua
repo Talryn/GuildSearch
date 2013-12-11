@@ -702,7 +702,7 @@ function GuildSearch:StaticPopupRemoveGuildMember(name)
 					button1 = _G.ACCEPT, 
 					button2 = _G.CANCEL,
 					whileDead = true,
-					hideOnEscape = self.db.profile.hideOnEsc,
+					hideOnEscape = true,
 					showAlert = true,
 					timeout = 0,
                     enterClicksFirstButton = false,
@@ -710,6 +710,8 @@ function GuildSearch:StaticPopupRemoveGuildMember(name)
 					    GuildSearch:RemoveGuildMember(data)
 					end,
 				}
+	_G.StaticPopupDialogs["GuildSearch_RemoveGuildMember"].hideOnEscape = 
+		self.db.profile.hideOnEsc
     local dialog = _G.StaticPopup_Show("GuildSearch_RemoveGuildMember", name)
     if dialog then
         dialog.data = name

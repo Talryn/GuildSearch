@@ -101,6 +101,7 @@ local guildData = {}
 local memberDetailFrame = nil
 local guildRanks = {}
 local guildRanksRev = {}
+local guildRanksAuth = {}
 local realmName = _G.GetRealmName()
 local realmNameAbbrv = formatRealmName(realmName)
 
@@ -470,8 +471,9 @@ function GuildSearch:OnInitialize()
 	-- Create the guild frame
 	guildFrame = self:CreateGuildFrame()
 
-	-- Register the command line option
+	-- Register the command line options
 	self:RegisterChatCommand("gsearch", "GuildSearchHandler")	
+	self:RegisterChatCommand("promotables", "GetPromotable")	
 
 	-- Create the LDB launcher
 	guildSearchLDB = LDB:NewDataObject("GuildSearch",{
@@ -561,7 +563,48 @@ function GuildSearch:PopulateGuildRanks()
 		guildRanksRev[v] = k
 	end
 
+	_G.wipe(guildRanksAuth)
+    for i = 1, numRanks do
+        _G.GuildControlSetRank(i)
+		local requiresAuth = _G.select(18, _G.GuildControlGetRankFlags()) and 
+			true or false
+        guildRanksAuth[i] = requiresAuth
+    end
+
     self:RefreshMemberDetails()
+end
+
+function GuildSearch:GetPromotable()
+	local testRank = nil
+	local maxRank = 1
+	for k, v in pairs(guildRanksAuth) do
+		if v then
+			testRank = k
+		end
+		maxRank = k
+	end
+	if not testRank then
+		self:Print("No authenticated ranks.")
+		return
+	end
+	
+	local promotables = {}
+	local count = 0
+	local numMembers = _G.GetNumGuildMembers()
+	for i = 1, numMembers do
+		local name, rank, rankIndex = _G.GetGuildRosterInfo(i)
+		rankIndex = rankIndex + 1
+		if not guildRanksAuth[rankIndex] then
+	        local allowed, reason = _G.IsGuildRankAssignmentAllowed(i, testRank);
+	        if allowed then
+				count = count + 1
+				if rankIndex > maxRank then
+					self:Print(name)
+				end
+			end
+		end
+	end
+	self:Print("Promotables: ".._G.tostring(count))
 end
 
 function GuildSearch:PopulateGuildData()
@@ -951,7 +994,7 @@ function GuildSearch:CreateMemberDetailsFrame()
 	detailwindow.officernote = onotebox
 	detailwindow.rankDropdown = rankDropdown
 
-    detailwindow:SetMovable()
+    detailwindow:SetMovable(true)
     detailwindow:RegisterForDrag("LeftButton")
     detailwindow:SetScript("OnDragStart",
         function(this,button)
@@ -1470,7 +1513,7 @@ function GuildSearch:CreateGuildFrame()
 
     guildwindow.lock = self.db.profile.lock_main_window
 
-    guildwindow:SetMovable()
+    guildwindow:SetMovable(true)
     guildwindow:RegisterForDrag("LeftButton")
     guildwindow:SetScript("OnDragStart",
         function(self,button)

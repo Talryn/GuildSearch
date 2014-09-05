@@ -1,15 +1,36 @@
 local _G = getfenv(0)
 
+-- Local versions for performance
+local tinsert = table.insert
+local string = _G.string
 local pairs = _G.pairs
 local ipairs = _G.ipairs
 
 local GuildSearch = _G.LibStub("AceAddon-3.0"):NewAddon("GuildSearch", "AceConsole-3.0", "AceEvent-3.0")
 
-local ADDON_NAME = ...
+local ADDON_NAME, addon = ...
 local ADDON_VERSION = "@project-version@"
 
--- Local versions for performance
-local tinsert = table.insert
+addon.addonName = "Guild Search"
+
+-- Try to remove the Git hash at the end, otherwise return the passed in value.
+local function cleanupVersion(version)
+	local iter = string.gmatch(version, "(.*)-[a-z0-9]+$")
+	if iter then
+		local ver = iter()
+		if ver and #ver >= 3 then
+			return ver
+		end
+	end
+	return version
+end
+
+addon.addonTitle = _G.GetAddOnMetadata(ADDON_NAME,"Title")
+addon.addonVersion = cleanupVersion("@project-version@")
+
+addon.CURRENT_BUILD, addon.CURRENT_INTERNAL, 
+  addon.CURRENT_BUILD_DATE, addon.CURRENT_UI_VERSION = _G.GetBuildInfo()
+addon.WoD = addon.CURRENT_UI_VERSION >= 60000
 
 local L = _G.LibStub("AceLocale-3.0"):GetLocale("GuildSearch", true)
 local AGU = _G.LibStub("AceGUI-3.0")
@@ -23,7 +44,7 @@ local ORANGE = "|cffff9933"
 local WHITE = "|cffffffff"
 
 local WHITE_VALUE = {
-    ["r"] = 1.0,
+  ["r"] = 1.0,
 	["g"] = 1.0,
 	["b"] = 1.0,
 	["a"] = 1.0
@@ -619,38 +640,42 @@ function GuildSearch:PopulateGuildData()
 			local name, rank, rankIndex, level, class, zone, note, 
 				officernote, online, status, classFileName = _G.GetGuildRosterInfo(index)
 
-				local nameOnly, realmOnly = parseName(name)
-				local charRealm = realmOnly or guildRealm or realmNameAbbrv or ""
-                local years, months, days, hours = _G.GetGuildRosterLastOnline(index)
-		        local weeklyXP, totalXP, weeklyRank, totalRank = _G.GetGuildRosterContribution(index)
-                local lastOnline = 0
-                local lastOnlineDate = ""
-                if online then
-                    lastOnline = _G.time()
-                    lastOnlineDate = _G.date("%Y/%m/%d %H:%M", lastOnline)
-                elseif years and months and days and hours then
-                    local diff = (((years*365)+(months*30)+days)*24+hours)*60*60
-                    lastOnline = _G.time() - diff
-                    lastOnlineDate = _G.date("%Y/%m/%d %H:00", lastOnline)
-                end
+			local nameOnly, realmOnly = parseName(name)
+			local charRealm = realmOnly or guildRealm or realmNameAbbrv or ""
+      local years, months, days, hours = _G.GetGuildRosterLastOnline(index)
+      local weeklyXP, totalXP, weeklyRank, totalRank = 0, 0, 0, 0
+			if not addon.WoD then
+				weeklyXP, totalXP, weeklyRank, totalRank =
+				  _G.GetGuildRosterContribution(index)
+			end
+      local lastOnline = 0
+      local lastOnlineDate = ""
+      if online then
+        lastOnline = _G.time()
+        lastOnlineDate = _G.date("%Y/%m/%d %H:%M", lastOnline)
+      elseif years and months and days and hours then
+        local diff = (((years*365)+(months*30)+days)*24+hours)*60*60
+        lastOnline = _G.time() - diff
+        lastOnlineDate = _G.date("%Y/%m/%d %H:00", lastOnline)
+      end
 
-				local optional = ""
-				if self.optionalColumn == "TotalXP" then
-					optional = totalXP
-				elseif self.optionalColumn == "WeeklyXP" then
-					optional = weeklyXP
-				elseif self.optionalColumn == "TotalRank" then
-					optional = totalRank
-				elseif self.optionalColumn == "WeeklyRank" then
-					optional = weeklyRank
-				else
-					optional = charRealm
-				end
+			local optional = ""
+			if self.optionalColumn == "TotalXP" then
+				optional = totalXP
+			elseif self.optionalColumn == "WeeklyXP" then
+				optional = weeklyXP
+			elseif self.optionalColumn == "TotalRank" then
+				optional = totalRank
+			elseif self.optionalColumn == "WeeklyRank" then
+				optional = weeklyRank
+			else
+				optional = charRealm
+			end
 
-				tinsert(guildData, 
-				    {name,level,note,officernote,rank,
-				     lastOnlineDate, optional, charRealm, weeklyXP, totalXP, 
-					 weeklyRank, totalRank, classFileName, rankIndex, index})
+			tinsert(guildData, 
+			    {name,level,note,officernote,rank,
+			     lastOnlineDate, optional, charRealm, weeklyXP, totalXP, 
+				 weeklyRank, totalRank, classFileName, rankIndex, index})
 		end
 	end
 

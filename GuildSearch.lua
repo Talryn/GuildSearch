@@ -134,10 +134,6 @@ local RANK_COL = 5
 local LASTONLINE_COL = 6
 local OPTIONAL_COL = 7
 local REALM_COL = 8
-local WEEKLYXP_COL = 9
-local TOTALXP_COL = 10
-local WEEKLYRANK_COL = 11
-local TOTALRANK_COL = 12
 local CLASS_COL = 13
 local RANKNUM_COL = 14
 local INDEX_COL = 15
@@ -298,10 +294,6 @@ function GuildSearch:GetOptions()
 					type = "select",
 					values = {
 					    ["Realm"] = L["Realm"],
-					    ["TotalXP"] = L["Total XP"],
-					    ["WeeklyXP"] = L["Weekly XP"],
-					    ["TotalRank"] = L["Total Rank"],
-					    ["WeeklyRank"] = L["Weekly Rank"],
 					},
 					order = 320,
 					set = function(info, val)
@@ -643,11 +635,6 @@ function GuildSearch:PopulateGuildData()
 			local nameOnly, realmOnly = parseName(name)
 			local charRealm = realmOnly or guildRealm or realmNameAbbrv or ""
       local years, months, days, hours = _G.GetGuildRosterLastOnline(index)
-      local weeklyXP, totalXP, weeklyRank, totalRank = 0, 0, 0, 0
-			if not addon.WoD then
-				weeklyXP, totalXP, weeklyRank, totalRank =
-				  _G.GetGuildRosterContribution(index)
-			end
       local lastOnline = 0
       local lastOnlineDate = ""
       if online then
@@ -660,22 +647,13 @@ function GuildSearch:PopulateGuildData()
       end
 
 			local optional = ""
-			if self.optionalColumn == "TotalXP" then
-				optional = totalXP
-			elseif self.optionalColumn == "WeeklyXP" then
-				optional = weeklyXP
-			elseif self.optionalColumn == "TotalRank" then
-				optional = totalRank
-			elseif self.optionalColumn == "WeeklyRank" then
-				optional = weeklyRank
-			else
-				optional = charRealm
-			end
+			--if self.optionalColumn == "TotalXP" then
+			optional = charRealm
+			--end
 
 			tinsert(guildData, 
-			    {name,level,note,officernote,rank,
-			     lastOnlineDate, optional, charRealm, weeklyXP, totalXP, 
-				 weeklyRank, totalRank, classFileName, rankIndex, index})
+			    {name, level, note, officernote, rank, lastOnlineDate, 
+					optional, charRealm, classFileName, rankIndex, index})
 		end
 	end
 
@@ -1405,18 +1383,10 @@ function GuildSearch:CreateGuildFrame()
 		["DoCellUpdate"] = nil,
 	}
 
-	if self.optionalColumn == "TotalXP" then
-		cols[OPTIONAL_COL].name = L["Total XP"]
-	elseif self.optionalColumn == "WeeklyXP" then
-		cols[OPTIONAL_COL].name = L["Weekly XP"]
-	elseif self.optionalColumn == "TotalRank" then
-		cols[OPTIONAL_COL].name = L["Total Rank"]
-	elseif self.optionalColumn == "WeeklyRank" then
-		cols[OPTIONAL_COL].name = L["Weekly Rank"]
-	else
-		cols[OPTIONAL_COL].name = L["Realm"]
-		cols[OPTIONAL_COL].align = "LEFT"
-	end
+	--if self.optionalColumn == "TotalXP" then
+	cols[OPTIONAL_COL].name = L["Realm"]
+	cols[OPTIONAL_COL].align = "LEFT"
+	--end
 
 	local table = ScrollingTable:CreateST(cols, 19, nil, nil, guildwindow);
 

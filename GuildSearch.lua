@@ -134,9 +134,9 @@ local RANK_COL = 5
 local LASTONLINE_COL = 6
 local OPTIONAL_COL = 7
 local REALM_COL = 8
-local CLASS_COL = 13
-local RANKNUM_COL = 14
-local INDEX_COL = 15
+local CLASS_COL = 9
+local RANKNUM_COL = 10
+local INDEX_COL = 11
 
 local options
 

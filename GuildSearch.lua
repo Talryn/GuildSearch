@@ -99,6 +99,7 @@ local defaults = {
 		},
 		columnWidths = ColumnWidths["default"],
 		verbose = false,
+		debug = false,
 		searchNames = true,
 		searchNotes = true,
 		searchOfficerNotes = true,
@@ -472,14 +473,14 @@ function GuildSearch:GetOptions()
 end
 
 function GuildSearch:OnInitialize()
-    -- Called when the addon is loaded
-    self.db = _G.LibStub("AceDB-3.0"):New("GuildSearchDB", defaults, "Default")
+	-- Called when the addon is loaded
+	self.db = _G.LibStub("AceDB-3.0"):New("GuildSearchDB", defaults, "Default")
 	self.optionalColumn = self.db.profile.optionalColumn
 
-    -- Register the options table
-    _G.LibStub("AceConfig-3.0"):RegisterOptionsTable("GuildSearch", self:GetOptions())
+	-- Register the options table
+	_G.LibStub("AceConfig-3.0"):RegisterOptionsTable("GuildSearch", self:GetOptions())
 	self.optionsFrame = _G.LibStub("AceConfigDialog-3.0"):AddToBlizOptions(
-	    "GuildSearch", "Guild Search")
+		"GuildSearch", "Guild Search")
 
 	-- Create the guild frame
 	guildFrame = self:CreateGuildFrame()
@@ -493,24 +494,24 @@ function GuildSearch:OnInitialize()
 		type = "launcher",
 		icon = "Interface\\Icons\\INV_Scroll_03.blp",
 		OnClick = function(clickedframe, button)
-		    if button == "RightButton" then
-    			local optionsFrame = _G.InterfaceOptionsFrame
+			if button == "RightButton" then
+				local optionsFrame = _G.InterfaceOptionsFrame
 
-    			if optionsFrame:IsVisible() then
-    				optionsFrame:Hide()
-    			else
-    			    self:HideGuildWindow()
-    				_G.InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
-    			end
-            elseif button == "LeftButton" then
-    			if self:IsWindowVisible() then
-    				self:HideGuildWindow()
-    			else
-        			local optionsFrame = _G.InterfaceOptionsFrame
-    			    optionsFrame:Hide()
-    				self:GuildSearchHandler("")
-    			end
-            end
+				if optionsFrame:IsVisible() then
+					optionsFrame:Hide()
+				else
+					self:HideGuildWindow()
+					_G.InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
+				end
+			elseif button == "LeftButton" then
+				if self:IsWindowVisible() then
+					self:HideGuildWindow()
+				else
+					local optionsFrame = _G.InterfaceOptionsFrame
+					optionsFrame:Hide()
+					self:GuildSearchHandler("")
+				end
+			end
 		end,
 		OnTooltipShow = function(tooltip)
 			if tooltip and tooltip.AddLine then
@@ -525,51 +526,61 @@ function GuildSearch:OnInitialize()
 	icon:Register("GuildSearchLDB", guildSearchLDB, self.db.profile.minimap)
 end
 
+local function splitWords(str)
+  local w = {}
+  local function helper(word) _G.table.insert(w, word) return nil end
+  str:gsub("(%w+)", helper)
+  return w
+end
+
 function GuildSearch:GuildSearchHandler(input)
-	searchTerm = input:lower()
-	
-	-- Show the guild frame
-	guildFrame:Show()
-
-	-- Need to turn on offline display to be able to seach them
-	_G.SetGuildRosterShowOffline(true)
-
-	-- Update the guild roster
-	if _G.IsInGuild() then
-		_G.GuildRoster()
+	-- Check for any debugging commands first
+	if input and input:trim() ~= "" then
+		local cmds = splitWords(input)
+		if cmds[1] and cmds[1] == "debug" then
+			if cmds[2] and cmds[2] == "on" then
+				self.db.profile.debug = true
+				self:Print("Debugging on.  Use '/gsearch debug off' to disable.")
+				return
+			elseif cmds[2] and cmds[2] == "off" then
+				self.db.profile.debug = false
+				self:Print("Debugging off.")
+				return
+			end
+		end		
 	end
+
+	self:ShowAndUpdateGuildFrame(input)
 end
 
 function GuildSearch:OnEnable()
-    -- Called when the addon is enabled
+	-- Called when the addon is enabled
 
-	-- Register to get the update event
+	self:RegisterEvent("PLAYER_REGEN_DISABLED")
+	self:RegisterEvent("PLAYER_REGEN_ENABLED")
 	self:RegisterEvent("GUILD_ROSTER_UPDATE")
-
-	-- Register to get the ranks event
 	self:RegisterEvent("GUILD_RANKS_UPDATE")
 	
 	memberDetailFrame = self:CreateMemberDetailsFrame()
 end
 
 function GuildSearch:OnDisable()
-    -- Called when the addon is disabled
+	self:UnregisterEvent("PLAYER_REGEN_DISABLED")
+	self:UnregisterEvent("PLAYER_REGEN_ENABLED")
 	self:UnregisterEvent("GUILD_ROSTER_UPDATE")
-
-    -- Called when the addon is disabled
 	self:UnregisterEvent("GUILD_RANKS_UPDATE")
 end
 
 function GuildSearch:PopulateGuildRanks()
-    local numRanks = _G.GuildControlGetNumRanks()
-    local name
+	local numRanks = _G.GuildControlGetNumRanks()
+	local name
 
-    _G.wipe(guildRanks)
+	_G.wipe(guildRanks)
 
-    for i = 1, numRanks do
-        name = _G.GuildControlGetRankName(i)
-        guildRanks[i] = name
-    end
+	for i = 1, numRanks do
+		name = _G.GuildControlGetRankName(i)
+		guildRanks[i] = name
+	end
 
 	_G.wipe(guildRanksRev)
 	for k,v in pairs(guildRanks) do
@@ -577,14 +588,14 @@ function GuildSearch:PopulateGuildRanks()
 	end
 
 	_G.wipe(guildRanksAuth)
-    for i = 1, numRanks do
-        _G.GuildControlSetRank(i)
+	for i = 1, numRanks do
+		_G.GuildControlSetRank(i)
 		local requiresAuth = _G.select(18, _G.GuildControlGetRankFlags()) and 
 			true or false
-        guildRanksAuth[i] = requiresAuth
-    end
+		guildRanksAuth[i] = requiresAuth
+	end
 
-    self:RefreshMemberDetails()
+	self:RefreshMemberDetails()
 end
 
 function GuildSearch:GetPromotable()
@@ -620,7 +631,17 @@ function GuildSearch:GetPromotable()
 	self:Print("Promotables: ".._G.tostring(count))
 end
 
+local combatTimer = nil
+local function CallPopulateGuildData()
+	combatTimer = false
+	GuildSearch:PopulateGuildData()
+end
+
 function GuildSearch:PopulateGuildData()
+	if _G.UnitAffectingCombat("player") then
+		return
+	end
+
 	_G.wipe(guildData)
 	
 	if _G.IsInGuild() then
@@ -666,19 +687,30 @@ function GuildSearch:PopulateGuildData()
 	end
 end
 
+function GuildSearch:PLAYER_REGEN_DISABLED()
+	self:UnregisterEvent("GUILD_ROSTER_UPDATE")
+end
+
+function GuildSearch:PLAYER_REGEN_ENABLED()
+	if guildFrame:IsShown() then
+		self:RegisterEvent("GUILD_ROSTER_UPDATE")
+	end
+end
+
 function GuildSearch:GUILD_RANKS_UPDATE(event, ...)
-    self:PopulateGuildRanks()
+	self:PopulateGuildRanks()
 end
 
 function GuildSearch:GUILD_ROSTER_UPDATE(event, ...)
-    local arg1 = ...
-    if (arg1) then
-        -- Clear the current selection in the window as it will change
-        if guildFrame and guildFrame.table then
-            guildFrame.table:ClearSelection()
-        end
-        _G.GuildRoster()
-    end
+	if _G.UnitAffectingCombat("player") or not guildFrame:IsShown() then return end
+	local arg1 = ...
+	if (arg1) then
+		-- Clear the current selection in the window as it will change
+		if guildFrame and guildFrame.table then
+			guildFrame.table:ClearSelection()
+		end
+		_G.GuildRoster()
+	end
 	self:PopulateGuildData()
 end
 
@@ -1077,26 +1109,26 @@ end
 
 function GuildSearch:RefreshMemberDetails()
 	if memberDetailFrame and memberDetailFrame:IsShown() then
-	    local name = memberDetailFrame.name
-	    local publicNote, officerNote, rank, index
-        local found = false
+		local name = memberDetailFrame.name
+		local publicNote, officerNote, rank, index
+		local found = false
 
-	    for i, data in ipairs(guildData) do
-	        if data and data[NAME_COL] and data[NAME_COL] == name then
-	            found = true
-	            publicNote = data[NOTE_COL]
-	            officerNote = data[ONOTE_COL]
-	            rank = data[RANKNUM_COL]
-	            index = data[INDEX_COL]
-            end
-        end
+		for i, data in ipairs(guildData) do
+			if data and data[NAME_COL] and data[NAME_COL] == name then
+				found = true
+				publicNote = data[NOTE_COL]
+				officerNote = data[ONOTE_COL]
+				rank = data[RANKNUM_COL]
+				index = data[INDEX_COL]
+			end
+		end
 	    
-	    if found then
-	        self:UpdateMemberRank(rank)
-        else
-            memberDetailFrame:Hide()
-        end
-    end
+		if found then
+			self:UpdateMemberRank(rank)
+		else
+			memberDetailFrame:Hide()
+		end
+	end
 end
 
 function GuildSearch:UpdateMemberRank(rank)
@@ -1156,6 +1188,27 @@ function GuildSearch:ShowMemberDetails(name, publicNote, officerNote, rank, inde
             detailwindow:Raise()
         end
     end
+end
+
+function GuildSearch:ShowAndUpdateGuildFrame(input)
+	if _G.UnitAffectingCombat("player") then
+		return
+	end
+
+	searchTerm = input and input:lower() or ""
+	guildFrame.SetSearchTerm(searchTerm)
+
+	-- Show the guild frame
+	guildFrame:Show()
+
+	-- Need to turn on offline display to be able to seach them
+	_G.SetGuildRosterShowOffline(true)
+
+	-- Update the guild roster
+	if _G.IsInGuild() then
+		self:RegisterEvent("GUILD_ROSTER_UPDATE")
+		_G.GuildRoster()
+	end
 end
 
 function GuildSearch:CreateGuildFrame()
@@ -1390,7 +1443,8 @@ function GuildSearch:CreateGuildFrame()
 
 	local table = ScrollingTable:CreateST(cols, 19, nil, nil, guildwindow);
 
-	local headertext = guildwindow:CreateFontString("GS_Main_HeaderText", guildwindow, "GameFontNormalLarge")
+	local headertext = guildwindow:CreateFontString("GS_Main_HeaderText",
+		guildwindow, "GameFontNormalLarge")
 	headertext:SetPoint("TOP", guildwindow, "TOP", 0, -20)
 	headertext:SetText(L["Guild Search"])
 
@@ -1416,28 +1470,35 @@ function GuildSearch:CreateGuildFrame()
 	table.frame:SetPoint("TOP", searchterm, "BOTTOM", 0, -20)
 	table.frame:SetPoint("LEFT", guildwindow, "LEFT", 25, 0)
 
-	local searchbutton = _G.CreateFrame("Button", nil, guildwindow, "UIPanelButtonTemplate")
+	guildwindow.SetSearchTerm = function(input)
+		if input then
+			guildFrame.searchterm:SetText(input)
+		end
+    guildFrame.table:SortData()
+    GuildSearch:UpdateRowCount()
+	end
+
+	local searchbutton = _G.CreateFrame("Button", nil, guildwindow,
+		"UIPanelButtonTemplate")
 	searchbutton:SetText(L["Search"])
 	searchbutton:SetWidth(100)
 	searchbutton:SetHeight(20)
 	searchbutton:SetPoint("LEFT", searchterm, "RIGHT", 10, 0)
 	searchbutton:SetScript("OnClick",
-	    function(this)
-	        table:SortData()
-	        self:UpdateRowCount()
-	    end)
+		function(this)
+			guildFrame.SetSearchTerm()
+		end)
 
-	local clearbutton = _G.CreateFrame("Button", nil, guildwindow, "UIPanelButtonTemplate")
+	local clearbutton = _G.CreateFrame("Button", nil, guildwindow,
+		"UIPanelButtonTemplate")
 	clearbutton:SetText(L["Clear"])
 	clearbutton:SetWidth(100)
 	clearbutton:SetHeight(20)
 	clearbutton:SetPoint("LEFT", searchbutton, "RIGHT", 10, 0)
 	clearbutton:SetScript("OnClick",
-	    function(this)
-	        searchterm:SetText("")
-	        table:SortData()
-	        self:UpdateRowCount()
-	    end)
+		function(this)
+			guildFrame.SetSearchTerm("")
+		end)
 
 	local rowcounttext = guildwindow:CreateFontString("GS_Main_RowCountText", guildwindow, "GameFontNormalSmall")
 	rowcounttext:SetPoint("BOTTOMLEFT", guildwindow, "BOTTOMLEFT", 20, 20)
@@ -1506,36 +1567,41 @@ function GuildSearch:CreateGuildFrame()
 		end
 	)
 
-    guildwindow.lock = self.db.profile.lock_main_window
+	guildwindow.lock = self.db.profile.lock_main_window
 
-    guildwindow:SetMovable(true)
-    guildwindow:RegisterForDrag("LeftButton")
-    guildwindow:SetScript("OnDragStart",
-        function(self,button)
+	guildwindow:SetMovable(true)
+	guildwindow:RegisterForDrag("LeftButton")
+	guildwindow:SetScript("OnDragStart",
+		function(self,button)
 			if not self.lock then
-            	self:StartMoving()
+				self:StartMoving()
 			end
-        end)
-    guildwindow:SetScript("OnDragStop",
-        function(self)
-            self:StopMovingOrSizing()
+		end)
+	guildwindow:SetScript("OnDragStop",
+		function(self)
+			self:StopMovingOrSizing()
 			if GuildSearch.db.profile.remember_main_pos then
-    			local scale = self:GetEffectiveScale() / _G.UIParent:GetEffectiveScale()
-    			local x, y = self:GetCenter()
-    			x, y = x * scale, y * scale
-    			x = x - _G.GetScreenWidth()/2
-    			y = y - _G.GetScreenHeight()/2
-    			x = x / self:GetScale()
-    			y = y / self:GetScale()
-    			GuildSearch.db.profile.main_window_x, 
-    			    GuildSearch.db.profile.main_window_y = x, y
-    			self:SetUserPlaced(false);
-            end
-        end)
-    guildwindow:EnableMouse(true)
+				local scale = self:GetEffectiveScale() / _G.UIParent:GetEffectiveScale()
+				local x, y = self:GetCenter()
+				x, y = x * scale, y * scale
+				x = x - _G.GetScreenWidth()/2
+				y = y - _G.GetScreenHeight()/2
+				x = x / self:GetScale()
+				y = y / self:GetScale()
+				GuildSearch.db.profile.main_window_x, 
+				GuildSearch.db.profile.main_window_y = x, y
+				self:SetUserPlaced(false);
+			end
+		end)
+	guildwindow:EnableMouse(true)
 
 	guildwindow:Hide()
-	
+
+	guildwindow:HookScript("OnHide", 
+		function(self)
+			self:UnregisterEvent("GUILD_ROSTER_UPDATE")
+		end)
+
 	return guildwindow
 end
 

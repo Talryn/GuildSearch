@@ -704,8 +704,15 @@ function GuildSearch:GUILD_RANKS_UPDATE(event, ...)
 end
 
 function GuildSearch:GUILD_ROSTER_UPDATE(event, update, ...)
-	if _G.UnitAffectingCombat("player") or not self:IsWindowVisible() then
-		return
+	if _G.UnitAffectingCombat("player") then return end
+
+	-- If the window isn't shown, don't update the data unless it was never updated.
+	if not self:IsWindowVisible() then
+		if addon.lastUpdate then
+			return
+		else
+			self:UnregisterEvent("GUILD_ROSTER_UPDATE")
+		end
 	end
 
 	if update then

@@ -126,6 +126,7 @@ local guildRanksRev = {}
 local guildRanksAuth = {}
 local realmName = _G.GetRealmName()
 local realmNameAbbrv = formatRealmName(realmName)
+addon.lastUpdate = nil
 
 local NAME_COL = 1
 local LEVEL_COL = 2
@@ -676,9 +677,10 @@ function GuildSearch:PopulateGuildData()
 			    {name, level, note, officernote, rank, lastOnlineDate, 
 					optional, charRealm, classFileName, rankIndex, index})
 		end
+		addon.lastUpdate = _G.time()
 	end
 
-    self:RefreshMemberDetails()
+	self:RefreshMemberDetails()
 
 	-- Update the guild data now
 	if guildFrame and guildFrame.table then
@@ -692,7 +694,7 @@ function GuildSearch:PLAYER_REGEN_DISABLED()
 end
 
 function GuildSearch:PLAYER_REGEN_ENABLED()
-	if guildFrame:IsShown() then
+	if self:IsWindowVisible() then
 		self:RegisterEvent("GUILD_ROSTER_UPDATE")
 	end
 end
@@ -701,16 +703,19 @@ function GuildSearch:GUILD_RANKS_UPDATE(event, ...)
 	self:PopulateGuildRanks()
 end
 
-function GuildSearch:GUILD_ROSTER_UPDATE(event, ...)
-	if _G.UnitAffectingCombat("player") or not guildFrame:IsShown() then return end
-	local arg1 = ...
-	if (arg1) then
+function GuildSearch:GUILD_ROSTER_UPDATE(event, update, ...)
+	if _G.UnitAffectingCombat("player") or not self:IsWindowVisible() then
+		return
+	end
+
+	if update then
 		-- Clear the current selection in the window as it will change
 		if guildFrame and guildFrame.table then
 			guildFrame.table:ClearSelection()
 		end
 		_G.GuildRoster()
 	end
+
 	self:PopulateGuildData()
 end
 
@@ -1219,16 +1224,17 @@ function GuildSearch:CreateGuildFrame()
 	guildwindow:SetHeight(450)
 
 	if self.db.profile.remember_main_pos then
-        guildwindow:SetPoint("CENTER", _G.UIParent, "CENTER",
-            self.db.profile.main_window_x, self.db.profile.main_window_y)
-    else
-	    guildwindow:SetPoint("CENTER", _G.UIParent)
-    end
+		guildwindow:SetPoint("CENTER", _G.UIParent, "CENTER",
+		self.db.profile.main_window_x, self.db.profile.main_window_y)
+	else
+		guildwindow:SetPoint("CENTER", _G.UIParent)
+	end
 
-    guildwindow.lock = self.db.profile.lock_main_window
+	guildwindow.lock = self.db.profile.lock_main_window
 
-	guildwindow:SetBackdrop({bgFile="Interface\\DialogFrame\\UI-DialogBox-Background", 
-	    edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border", tile=true,
+	guildwindow:SetBackdrop(
+		{bgFile="Interface\\DialogFrame\\UI-DialogBox-Background",
+		edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border", tile=true,
 		tileSize=32, edgeSize=32, insets={left=11, right=12, top=12, bottom=11}})
 
 	local ScrollingTable = _G.LibStub("ScrollingTable");
@@ -1500,8 +1506,14 @@ function GuildSearch:CreateGuildFrame()
 			guildFrame.SetSearchTerm("")
 		end)
 
-	local rowcounttext = guildwindow:CreateFontString("GS_Main_RowCountText", guildwindow, "GameFontNormalSmall")
+	local rowcounttext = guildwindow:CreateFontString(
+		"GS_Main_RowCountText", guildwindow, "GameFontNormalSmall")
 	rowcounttext:SetPoint("BOTTOMLEFT", guildwindow, "BOTTOMLEFT", 20, 20)
+
+	guildwindow.updateTime = guildwindow:CreateFontString(
+		"GS_Main_UpdateTimeText", guildwindow, "GameFontNormalSmall")
+	guildwindow.updateTime:SetPoint(
+		"BOTTOMRIGHT", guildwindow, "BOTTOMRIGHT", -20, 20)
 
 	local editbutton = _G.CreateFrame("Button", nil, guildwindow, "UIPanelButtonTemplate")
 	editbutton:SetText(L["Edit"])
@@ -1532,7 +1544,7 @@ function GuildSearch:CreateGuildFrame()
 	guildwindow.searchterm = searchterm
 	guildwindow.rowcount = rowcounttext
 
-    table:EnableSelection(true)
+	table:EnableSelection(true)
 
     -- Turn off the mouseover highlighting
 	table:RegisterEvents({
@@ -1605,6 +1617,8 @@ function GuildSearch:CreateGuildFrame()
 	return guildwindow
 end
 
+local resultsFmt = "%d %s"
+local timeFmt = "%s: %s"
 function GuildSearch:UpdateRowCount()
     local table = guildFrame.table
     local count = 0
@@ -1612,7 +1626,13 @@ function GuildSearch:UpdateRowCount()
         count = #table.filtered
     end
     
-    guildFrame.rowcount:SetText(count.." results")
+    guildFrame.rowcount:SetText(resultsFmt:format(count, L["results"]))
+		local updateText = ""
+		if addon.lastUpdate then
+			updateText = timeFmt:format(L["Last Update"], 
+				date("%H:%M:%S", addon.lastUpdate) or "")
+		end
+		guildFrame.updateTime:SetText(updateText)
 end
 
 function GuildSearch:IsWindowVisible()

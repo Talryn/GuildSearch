@@ -1637,7 +1637,7 @@ function GuildSearch:UpdateRowCount()
 		local updateText = ""
 		if addon.lastUpdate then
 			updateText = timeFmt:format(L["Last Update"], 
-				date("%H:%M:%S", addon.lastUpdate) or "")
+				_G.date("%H:%M:%S", addon.lastUpdate) or "")
 		end
 		guildFrame.updateTime:SetText(updateText)
 end

@@ -715,7 +715,7 @@ function GuildSearch:GUILD_ROSTER_UPDATE(event, update, ...)
 		end
 	end
 
-	if update then
+	if update or not addon.lastUpdate then
 		-- Clear the current selection in the window as it will change
 		if guildFrame and guildFrame.table then
 			guildFrame.table:ClearSelection()

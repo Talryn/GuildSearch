@@ -121,6 +121,7 @@ local searchTerm = nil
 local guildFrame = nil
 local guildData = {}
 local memberDetailFrame = nil
+local bulkUpdateFrame = nil
 local guildRanks = {}
 local guildRanksRev = {}
 local guildRanksAuth = {}
@@ -487,8 +488,8 @@ function GuildSearch:OnInitialize()
 	guildFrame = self:CreateGuildFrame()
 
 	-- Register the command line options
-	self:RegisterChatCommand("gsearch", "GuildSearchHandler")	
-	self:RegisterChatCommand("promotables", "GetPromotable")	
+	self:RegisterChatCommand("gsearch", "GuildSearchHandler")
+	self:RegisterChatCommand("gbulk", "BulkRankUpdate")
 
 	-- Create the LDB launcher
 	guildSearchLDB = LDB:NewDataObject("GuildSearch",{
@@ -563,6 +564,7 @@ function GuildSearch:OnEnable()
 	self:RegisterEvent("GUILD_RANKS_UPDATE")
 	
 	memberDetailFrame = self:CreateMemberDetailsFrame()
+	bulkUpdateFrame = self:CreateBulkRankUpdateFrame()
 end
 
 function GuildSearch:OnDisable()
@@ -597,39 +599,6 @@ function GuildSearch:PopulateGuildRanks()
 	end
 
 	self:RefreshMemberDetails()
-end
-
-function GuildSearch:GetPromotable()
-	local testRank = nil
-	local maxRank = 1
-	for k, v in pairs(guildRanksAuth) do
-		if v then
-			testRank = k
-		end
-		maxRank = k
-	end
-	if not testRank then
-		self:Print("No authenticated ranks.")
-		return
-	end
-	
-	local promotables = {}
-	local count = 0
-	local numMembers = _G.GetNumGuildMembers()
-	for i = 1, numMembers do
-		local name, rank, rankIndex = _G.GetGuildRosterInfo(i)
-		rankIndex = rankIndex + 1
-		if not guildRanksAuth[rankIndex] then
-	        local allowed, reason = _G.IsGuildRankAssignmentAllowed(i, testRank);
-	        if allowed then
-				count = count + 1
-				if rankIndex > maxRank then
-					self:Print(name)
-				end
-			end
-		end
-	end
-	self:Print("Promotables: ".._G.tostring(count))
 end
 
 local combatTimer = nil
@@ -806,6 +775,224 @@ function GuildSearch:StaticPopupRemoveGuildMember(name)
     if dialog then
         dialog.data = name
     end
+end
+
+function GuildSearch:BulkRankUpdate()
+	if not bulkUpdateFrame then return end
+	bulkUpdateFrame:Show()
+end
+
+function GuildSearch:BulkUpdateRanks(oldRank, newRank, testing)
+	for i = 1, _G.GetNumGuildMembers() do
+		local name, rank, rankIndex = _G.GetGuildRosterInfo(i)
+		local targetIndex = rankIndex + 1
+		if targetIndex == oldRank then
+			local allowed, reason = _G.IsGuildRankAssignmentAllowed(i, newRank)
+			if allowed then
+				if testing then
+					self:Print("Updating ".._G.tostring(name))
+				else
+					_G.SetGuildMemberRank(i, newRank)
+				end
+			else
+				local fmt = "Cannot update %s [%s]"
+				self:Print(fmt:format(_G.tostring(name), _G.tostring(reason)))
+			end
+		end
+	end
+
+end
+
+function GuildSearch:VerifyBulkUpdateRanks(oldRank, newRank)
+    _G.StaticPopupDialogs["GUILDSEARCH_BULK_UPDATE"] = _G.StaticPopupDialogs["GUILDSEARCH_BULK_UPDATE"] or {
+        text = "Are you sure you want to move members from %s to %s?",
+		oldRank = 0,
+        newRank = 0,
+		showAlert = true,
+        button1 = _G.YES,
+        button2 = _G.CANCEL,
+		button3 = "Test",
+        hasEditBox = false,
+        hasWideEditBox = false,
+        enterClicksFirstButton = false,
+        OnAccept = function(this)
+            self:BulkUpdateRanks(oldRank, newRank, false)
+        end,
+        OnAlt = function(this)
+            self:BulkUpdateRanks(oldRank, newRank, true)
+        end,
+        timeout = 0,
+        whileDead = true,
+        hideOnEscape = true
+    }
+
+	local highestRank = 2
+	local lowestRank = _G.GuildControlGetNumRanks()
+	if oldRank >= highestRank and oldRank <= lowestRank and 
+		newRank >= highestRank and newRank <= lowestRank then
+	    _G.StaticPopupDialogs["GUILDSEARCH_BULK_UPDATE"].OnAccept = function(this)
+            self:BulkUpdateRanks(oldRank, newRank, false)
+        end
+	    _G.StaticPopupDialogs["GUILDSEARCH_BULK_UPDATE"].OnAlt = function(this)
+            self:BulkUpdateRanks(oldRank, newRank, true)
+        end
+	    local oldRankText = _G.GuildControlGetRankName(oldRank) or ""
+	    local newRankText = _G.GuildControlGetRankName(newRank) or ""
+	    _G.StaticPopup_Show("GUILDSEARCH_BULK_UPDATE", oldRankText, newRankText)
+	end
+end
+
+function GuildSearch:CreateBulkRankUpdateFrame()
+	local rankwindow = _G.CreateFrame("Frame", "GuildSearch_RankUpdateWindow", _G.UIParent)
+	rankwindow:SetFrameStrata("DIALOG")
+	rankwindow:SetToplevel(true)
+	rankwindow:SetWidth(350)
+	rankwindow:SetHeight(180)
+	rankwindow:SetPoint("CENTER", _G.UIParent)
+	rankwindow:SetBackdrop(
+		{bgFile="Interface\\ChatFrame\\ChatFrameBackground", 
+	    edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border", tile=true,
+		tileSize=32, edgeSize=32, insets={left=11, right=12, top=12, bottom=11}})
+	rankwindow:SetBackdropColor(0,0,0,1)
+
+	local savebutton = _G.CreateFrame("Button", nil, rankwindow, "UIPanelButtonTemplate")
+	savebutton:SetText(L["Save"])
+	savebutton:SetWidth(100)
+	savebutton:SetHeight(20)
+	savebutton:SetPoint("BOTTOM", rankwindow, "BOTTOM", -60, 20)
+	savebutton:SetScript("OnClick",
+	    function(this)
+	        local frame = this:GetParent()
+            local oldRank = _G.UIDropDownMenu_GetSelectedValue(frame.oldRankDropdown)
+            local newRank = _G.UIDropDownMenu_GetSelectedValue(frame.newRankDropdown)
+	        self:VerifyBulkUpdateRanks(oldRank, newRank)
+	        frame:Hide()
+	    end)
+
+	local cancelbutton = _G.CreateFrame("Button", nil, rankwindow, "UIPanelButtonTemplate")
+	cancelbutton:SetText(L["Cancel"])
+	cancelbutton:SetWidth(100)
+	cancelbutton:SetHeight(20)
+	cancelbutton:SetPoint("BOTTOM", rankwindow, "BOTTOM", 60, 20)
+	cancelbutton:SetScript("OnClick", function(this) this:GetParent():Hide(); end)
+
+	local headertext = rankwindow:CreateFontString("GS_HeaderText", rankwindow, "GameFontNormalLarge")
+	headertext:SetPoint("TOP", rankwindow, "TOP", 0, -20)
+	headertext:SetText(L["Guild Bulk Rank Update"])
+
+    local oldRankLabel = rankwindow:CreateFontString("GS_OldRankLabel", rankwindow, "GameFontNormal")
+	oldRankLabel:SetPoint("TOP", headertext, "BOTTOM", 0, -20)
+	oldRankLabel:SetPoint("LEFT", rankwindow, "LEFT", 20, 0)
+	--rankLabel:SetFont(rankLabel:GetFont(), 14)
+	--rankLabel:SetTextColor(1.0,1.0,1.0,1)
+	oldRankLabel:SetText(L["Old Rank"]..":")
+
+    local oldRankDropdown = _G.CreateFrame("Button", "GS_OldRankDropDown", rankwindow, "UIDropDownMenuTemplate")
+    oldRankDropdown:ClearAllPoints()
+    oldRankDropdown:SetPoint("TOPLEFT", oldRankLabel, "TOPRIGHT", 7, 5)
+    oldRankDropdown:Show()
+    _G.UIDropDownMenu_Initialize(oldRankDropdown, function(self, level)
+        -- The following code is partially copied from Blizzard's code
+        -- in Blizzard_GuildRoster.lua
+        local numRanks = _G.GuildControlGetNumRanks()
+        -- Get the user's rank and adjust to 1-based
+        local _, _, userRankIndex = _G.GetGuildInfo("player")
+        userRankIndex = userRankIndex + 1
+        -- Set the highest rank to 1 above the user's rank
+        local highestRank = userRankIndex + 1
+        -- If the user cannot promote, the highest rank is the current member's rank
+        --if (not _G.CanGuildPromote()) or userRankIndex >= memberRankIndex then
+        --    highestRank = memberRankIndex
+        --end
+        local lowestRank = numRanks
+        --if (not _G.CanGuildDemote()) or userRankIndex >= memberRankIndex then
+        --    lowestRank = memberRankIndex
+        --end
+
+        for i = highestRank, lowestRank do
+            local info = _G.UIDropDownMenu_CreateInfo()
+            info.text = _G.GuildControlGetRankName(i)
+            info.value = i
+            info.arg1 = i
+            info.colorCode = WHITE
+            info.checked = false -- i == lowestRank + 1
+            info.func = function(self) 
+                _G.UIDropDownMenu_SetSelectedValue(oldRankDropdown, self.value)
+            end
+            _G.UIDropDownMenu_AddButton(info, level)
+        end
+    end)
+    _G.UIDropDownMenu_SetWidth(oldRankDropdown, 100);
+    _G.UIDropDownMenu_SetButtonWidth(oldRankDropdown, 124)
+    _G.UIDropDownMenu_SetSelectedValue(oldRankDropdown, 0)
+    _G.UIDropDownMenu_JustifyText(oldRankDropdown, "LEFT")
+
+    local newRankLabel = rankwindow:CreateFontString("GS_NewRankLabel", rankwindow, "GameFontNormal")
+	newRankLabel:SetPoint("TOP", oldRankLabel, "BOTTOM", 0, -20)
+	newRankLabel:SetPoint("LEFT", rankwindow, "LEFT", 20, 0)
+	--rankLabel:SetFont(rankLabel:GetFont(), 14)
+	--rankLabel:SetTextColor(1.0,1.0,1.0,1)
+	newRankLabel:SetText(L["New Rank"]..":")
+
+    local newRankDropdown = _G.CreateFrame("Button", "GS_NewRankDropDown", rankwindow, "UIDropDownMenuTemplate")
+    newRankDropdown:ClearAllPoints()
+    newRankDropdown:SetPoint("TOPLEFT", newRankLabel, "TOPRIGHT", 7, 5)
+    newRankDropdown:Show()
+    _G.UIDropDownMenu_Initialize(newRankDropdown, function(self, level)
+        -- The following code is partially copied from Blizzard's code
+        -- in Blizzard_GuildRoster.lua
+        local numRanks = _G.GuildControlGetNumRanks()
+        -- Get the user's rank and adjust to 1-based
+        local _, _, userRankIndex = _G.GetGuildInfo("player")
+        userRankIndex = userRankIndex + 1
+        -- Set the highest rank to 1 above the user's rank
+        local highestRank = userRankIndex + 1
+        -- If the user cannot promote, the highest rank is the current member's rank
+        --if (not _G.CanGuildPromote()) or userRankIndex >= memberRankIndex then
+        --    highestRank = memberRankIndex
+        --end
+        local lowestRank = numRanks
+        --if (not _G.CanGuildDemote()) or userRankIndex >= memberRankIndex then
+        --    lowestRank = memberRankIndex
+        --end
+
+        for i = highestRank, lowestRank do
+            local info = _G.UIDropDownMenu_CreateInfo()
+            info.text = _G.GuildControlGetRankName(i)
+            info.value = i
+            info.arg1 = i
+            info.colorCode = WHITE
+            info.checked = false --i == lowestRank
+            info.func = function(self) 
+                _G.UIDropDownMenu_SetSelectedValue(newRankDropdown, self.value)
+            end
+            _G.UIDropDownMenu_AddButton(info, level)
+        end
+    end)
+    _G.UIDropDownMenu_SetWidth(newRankDropdown, 100);
+    _G.UIDropDownMenu_SetButtonWidth(newRankDropdown, 124)
+    _G.UIDropDownMenu_SetSelectedValue(newRankDropdown, 0)
+    _G.UIDropDownMenu_JustifyText(newRankDropdown, "LEFT")
+
+	rankwindow.newRankDropdown = newRankDropdown
+	rankwindow.oldRankDropdown = oldRankDropdown
+
+    rankwindow:SetMovable(true)
+    rankwindow:RegisterForDrag("LeftButton")
+    rankwindow:SetScript("OnDragStart",
+        function(this,button)
+        	this:StartMoving()
+        end)
+    rankwindow:SetScript("OnDragStop",
+        function(this)
+            this:StopMovingOrSizing()
+        end)
+    rankwindow:EnableMouse(true)
+
+	rankwindow:Hide()
+
+	return rankwindow
+
 end
 
 function GuildSearch:CreateMemberDetailsFrame()

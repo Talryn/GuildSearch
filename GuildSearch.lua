@@ -490,6 +490,7 @@ function GuildSearch:OnInitialize()
 	-- Register the command line options
 	self:RegisterChatCommand("gsearch", "GuildSearchHandler")
 	self:RegisterChatCommand("gbulk", "BulkRankUpdate")
+	self:RegisterChatCommand("greplace", "SearchReplaceNotes")
 
 	-- Create the LDB launcher
 	guildSearchLDB = LDB:NewDataObject("GuildSearch",{
@@ -803,6 +804,104 @@ function GuildSearch:BulkUpdateRanks(oldRank, newRank, testing)
 
 end
 
+function GuildSearch:SearchReplaceNotes()
+    if ReplaceNotesFrame then return end
+
+    local frame = AGU:Create("Frame")
+    frame:SetTitle(L["Search"])
+    frame:SetWidth(400)
+    frame:SetHeight(250)
+    frame:SetLayout("Flow")
+	frame:SetCallback("OnClose", function(widget)
+		widget:ReleaseChildren()
+		widget:Release()
+		ReplaceNotesFrame = nil
+	end)
+    ReplaceNotesFrame = frame
+
+    local text =  AGU:Create("Label")
+    text:SetText(L["SearchReplaceTitle"])
+    --text:SetFont(_G.GameFontNormal:GetFont())
+    text.label:SetJustifyH("CENTER")
+    text:SetFullWidth(true)
+    text:SetCallback("OnRelease",
+        function(widget)
+            widget.label:SetJustifyH("LEFT")
+        end
+    )
+    frame:AddChild(text)
+
+    local spacer = AGU:Create("Label")
+    spacer:SetFullWidth(true)
+    spacer:SetText(" ")
+    frame:AddChild(spacer)
+
+    local searchbox = AGU:Create("EditBox")
+    searchbox:SetFullWidth(true)
+    searchbox:SetText("")
+    searchbox:SetLabel(L["Find"])
+    searchbox:SetMaxLetters(0)
+    searchbox:SetFocus()
+    frame:AddChild(searchbox)
+
+    local replacebox = AGU:Create("EditBox")
+    replacebox:SetFullWidth(true)
+    replacebox:SetText("")
+    replacebox:SetLabel(L["Replace"])
+    replacebox:SetMaxLetters(0)
+    frame:AddChild(replacebox)
+
+    local replaceButton = AGU:Create("Button")
+    replaceButton:SetText(L["Replace"])
+    replaceButton:SetCallback("OnClick",
+        function(widget)
+			local search = searchbox:GetText()
+			local replace = replacebox:GetText()
+            local result = GuildSearch:ReplaceNotes(search, replace, false)
+        end)
+    frame:AddChild(replaceButton)
+
+    local replaceButton = AGU:Create("Button")
+    replaceButton:SetText(L["Test"])
+    replaceButton:SetCallback("OnClick",
+        function(widget)
+			local search = searchbox:GetText()
+			local replace = replacebox:GetText()
+            local result = GuildSearch:ReplaceNotes(search, replace, true)
+			frame:Hide()
+        end)
+    frame:AddChild(replaceButton)
+	
+end
+
+function GuildSearch:ReplaceNotes(search, replace, testing)
+	for i = 1, _G.GetNumGuildMembers() do
+		local name, rank, rankIndex, level, class, zone, note, onote = _G.GetGuildRosterInfo(i)
+		if note and note ~= "" then
+			local result = note:gsub(search, replace)
+			if result and note ~= result then
+				if testing then
+					local fmt = "Updating public note for %s from '%s' to '%s'."
+					self:Print(fmt:format(name, note, result))
+				else
+					_G.GuildRosterSetPublicNote(i, result)
+				end
+			end
+		end
+		if onote and onote ~= "" then
+			local result = onote:gsub(search, replace)
+			if result and onote ~= result then
+				if testing then
+					local fmt = "Updating officer note for %s from '%s' to '%s'."
+					self:Print(fmt:format(name, onote, result))
+				else
+					_G.GuildRosterSetOfficerNote(i, result)
+				end
+			end
+		end
+	end
+end
+
 function GuildSearch:VerifyBulkUpdateRanks(oldRank, newRank)
     _G.StaticPopupDialogs["GUILDSEARCH_BULK_UPDATE"] = _G.StaticPopupDialogs["GUILDSEARCH_BULK_UPDATE"] or {
         text = "Are you sure you want to move members from %s to %s?",
@@ -811,7 +910,7 @@ function GuildSearch:VerifyBulkUpdateRanks(oldRank, newRank)
 		showAlert = true,
         button1 = _G.YES,
         button2 = _G.CANCEL,
-		button3 = "Test",
+		button3 = L["Test"],
         hasEditBox = false,
         hasWideEditBox = false,
         enterClicksFirstButton = false,

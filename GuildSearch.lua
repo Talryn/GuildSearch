@@ -1814,7 +1814,7 @@ function GuildSearch:CreateGuildFrame()
 
 	local unitHeader = guildwindow:CreateFontString("GS_OnlineUnitText", guildwindow, "GameFontNormal")
 	unitHeader:SetPoint("TOPRIGHT", guildwindow, "TOPRIGHT", -30, -50)
-	unitHeader:SetText("days")
+	unitHeader:SetText(L["days"])
 
 	local onlineUnits = _G.CreateFrame("EditBox", nil, guildwindow, "InputBoxTemplate")
 	onlineUnits:SetFontObject(_G.ChatFontNormal)
@@ -1860,7 +1860,7 @@ function GuildSearch:CreateGuildFrame()
 
 	local onlineHeader = guildwindow:CreateFontString("GS_OnlineHdrText", guildwindow, "GameFontNormal")
 	onlineHeader:SetPoint("RIGHT", onlineOper, "LEFT", -10, 0)
-	onlineHeader:SetText("Last Online")
+	onlineHeader:SetText(L["Last Online"])
 
 	local rowcounttext = guildwindow:CreateFontString(
 		"GS_Main_RowCountText", guildwindow, "GameFontNormalSmall")

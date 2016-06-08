@@ -5,6 +5,7 @@ local tinsert = table.insert
 local string = _G.string
 local pairs = _G.pairs
 local ipairs = _G.ipairs
+local type = _G.type
 
 local GuildSearch = _G.LibStub("AceAddon-3.0"):NewAddon("GuildSearch", "AceConsole-3.0", "AceEvent-3.0")
 
@@ -12,6 +13,7 @@ local ADDON_NAME, addon = ...
 local ADDON_VERSION = "@project-version@"
 
 addon.addonName = "Guild Search"
+addon.criteria = {}
 
 -- Try to remove the Git hash at the end, otherwise return the passed in value.
 local function cleanupVersion(version)
@@ -140,6 +142,7 @@ local REALM_COL = 8
 local CLASS_COL = 9
 local RANKNUM_COL = 10
 local INDEX_COL = 11
+local LASTONLINESECS_COL = 12
 
 local options
 
@@ -477,6 +480,7 @@ end
 function GuildSearch:OnInitialize()
 	-- Called when the addon is loaded
 	self.db = _G.LibStub("AceDB-3.0"):New("GuildSearchDB", defaults, "Default")
+	addon.db = self.db
 	self.optionalColumn = self.db.profile.optionalColumn
 
 	-- Register the options table
@@ -626,17 +630,17 @@ function GuildSearch:PopulateGuildData()
 
 			local nameOnly, realmOnly = parseName(name)
 			local charRealm = realmOnly or guildRealm or realmNameAbbrv or ""
-      local years, months, days, hours = _G.GetGuildRosterLastOnline(index)
-      local lastOnline = 0
-      local lastOnlineDate = ""
-      if online then
-        lastOnline = _G.time()
-        lastOnlineDate = _G.date("%Y/%m/%d %H:%M", lastOnline)
-      elseif years and months and days and hours then
-        local diff = (((years*365)+(months*30)+days)*24+hours)*60*60
-        lastOnline = _G.time() - diff
-        lastOnlineDate = _G.date("%Y/%m/%d %H:00", lastOnline)
-      end
+			local years, months, days, hours = _G.GetGuildRosterLastOnline(index)
+			local lastOnline = 0
+			local lastOnlineDate = ""
+			if online then
+				lastOnline = _G.time()
+				lastOnlineDate = _G.date("%Y/%m/%d %H:%M", lastOnline)
+			elseif years and months and days and hours then
+				local diff = (((years*365)+(months*30)+days)*24+hours)*60*60
+				lastOnline = _G.time() - diff
+				lastOnlineDate = _G.date("%Y/%m/%d %H:00", lastOnline)
+			end
 
 			local optional = ""
 			--if self.optionalColumn == "TotalXP" then
@@ -645,7 +649,7 @@ function GuildSearch:PopulateGuildData()
 
 			tinsert(guildData, 
 			    {name, level, note, officernote, rank, lastOnlineDate, 
-					optional, charRealm, classFileName, rankIndex, index})
+					optional, charRealm, classFileName, rankIndex, index, lastOnline})
 		end
 		addon.lastUpdate = _G.time()
 	end
@@ -1735,10 +1739,29 @@ function GuildSearch:CreateGuildFrame()
 		["DoCellUpdate"] = nil,
 	}
 
-	--if self.optionalColumn == "TotalXP" then
 	cols[OPTIONAL_COL].name = L["Realm"]
 	cols[OPTIONAL_COL].align = "LEFT"
-	--end
+
+	guildwindow.SortData = function(this)
+		addon.criteria.searchTerm = guildFrame.searchterm:GetText() or ""
+		addon.criteria.oper = _G.UIDropDownMenu_GetSelectedValue(guildFrame.onlineOper) or 1
+		addon.criteria.units = _G.tonumber(guildFrame.onlineUnits:GetText()) or 0
+	    guildFrame.table:SortData()
+	    GuildSearch:UpdateRowCount()
+	end
+
+	guildwindow.SetSearchTerm = function(input)
+		if input then
+			guildFrame.searchterm:SetText(input)
+		end
+    	guildFrame.SortData()
+	end
+
+	guildwindow.ClearSearchTerm = function(this)
+        guildwindow.searchterm:SetText("")
+		guildwindow.onlineUnits:SetText("0")
+        guildwindow:Hide()
+	end
 
 	local table = ScrollingTable:CreateST(cols, 19, nil, nil, guildwindow);
 
@@ -1753,29 +1776,17 @@ function GuildSearch:CreateGuildFrame()
 	searchterm:SetHeight(35)
 	searchterm:SetPoint("TOPLEFT", guildwindow, "TOPLEFT", 30, -50)
 	searchterm:SetScript("OnShow", function(this) this:SetFocus() end)
-	searchterm:SetScript("OnEnterPressed",
-	    function(this)
-	        table:SortData()
-	        self:UpdateRowCount()
-	    end)
+	searchterm:SetScript("OnEnterPressed", guildwindow.SortData)
 	if self.db.profile.hideOnEsc then
 		searchterm:SetScript("OnEscapePressed",
 		    function(this)
-		        this:SetText("")
+		        this.ClearSearchTerm()
 		        this:GetParent():Hide()
 		    end)
 	end
 
 	table.frame:SetPoint("TOP", searchterm, "BOTTOM", 0, -20)
 	table.frame:SetPoint("LEFT", guildwindow, "LEFT", 25, 0)
-
-	guildwindow.SetSearchTerm = function(input)
-		if input then
-			guildFrame.searchterm:SetText(input)
-		end
-    guildFrame.table:SortData()
-    GuildSearch:UpdateRowCount()
-	end
 
 	local searchbutton = _G.CreateFrame("Button", nil, guildwindow,
 		"UIPanelButtonTemplate")
@@ -1796,8 +1807,60 @@ function GuildSearch:CreateGuildFrame()
 	clearbutton:SetPoint("LEFT", searchbutton, "RIGHT", 10, 0)
 	clearbutton:SetScript("OnClick",
 		function(this)
-			guildFrame.SetSearchTerm("")
+			this.ClearSearchTerm()
+			this.SortData()
 		end)
+
+
+	local unitHeader = guildwindow:CreateFontString("GS_OnlineUnitText", guildwindow, "GameFontNormal")
+	unitHeader:SetPoint("TOPRIGHT", guildwindow, "TOPRIGHT", -30, -50)
+	unitHeader:SetText("days")
+
+	local onlineUnits = _G.CreateFrame("EditBox", nil, guildwindow, "InputBoxTemplate")
+	onlineUnits:SetFontObject(_G.ChatFontNormal)
+	onlineUnits:SetWidth(40)
+	onlineUnits:SetHeight(35)
+	onlineUnits:SetPoint("RIGHT", unitHeader, "LEFT", -10, 0)
+	onlineUnits:SetNumeric(true)
+	onlineUnits:SetText("0")
+	onlineUnits:SetScript("OnEnterPressed", guildwindow.SortData)
+	if self.db.profile.hideOnEsc then
+		onlineUnits:SetScript("OnEscapePressed",
+		    function(this)
+		        this.ClearSearchTerm()
+		        this:GetParent():Hide()
+		    end)
+	end
+
+    local onlineOper = _G.CreateFrame("Button", "GS_OnlineOperDropDown", guildwindow, "UIDropDownMenuTemplate")
+    onlineOper:ClearAllPoints()
+    onlineOper:SetPoint("RIGHT", onlineUnits, "LEFT", -10, 0)
+    onlineOper:Show()
+    _G.UIDropDownMenu_Initialize(onlineOper, function(self, level)
+		local operators = { ">=", "<=" }
+		local setOperValue = function(self) 
+        	_G.UIDropDownMenu_SetSelectedValue(onlineOper, self.value)
+			guildwindow.SortData()
+       	end
+        for i, op in ipairs(operators) do
+            local info = _G.UIDropDownMenu_CreateInfo()
+            info.text = op
+            info.value = i
+            info.arg1 = i
+            info.colorCode = WHITE
+            info.checked = false
+            info.func = setOperValue
+            _G.UIDropDownMenu_AddButton(info, level)
+        end
+    end)
+    _G.UIDropDownMenu_SetWidth(onlineOper, 50);
+    _G.UIDropDownMenu_SetButtonWidth(onlineOper, 70)
+    _G.UIDropDownMenu_SetSelectedValue(onlineOper, 1)
+    _G.UIDropDownMenu_JustifyText(onlineOper, "LEFT")
+
+	local onlineHeader = guildwindow:CreateFontString("GS_OnlineHdrText", guildwindow, "GameFontNormal")
+	onlineHeader:SetPoint("RIGHT", onlineOper, "LEFT", -10, 0)
+	onlineHeader:SetText("Last Online")
 
 	local rowcounttext = guildwindow:CreateFontString(
 		"GS_Main_RowCountText", guildwindow, "GameFontNormalSmall")
@@ -1836,6 +1899,8 @@ function GuildSearch:CreateGuildFrame()
 	guildwindow.table = table
 	guildwindow.searchterm = searchterm
 	guildwindow.rowcount = rowcounttext
+	guildwindow.onlineUnits = onlineUnits
+	guildwindow.onlineOper = onlineOper
 
 	table:EnableSelection(true)
 
@@ -1851,24 +1916,15 @@ function GuildSearch:CreateGuildFrame()
 
 	table:SetFilter(
 		function(self, row)
-			local term = searchterm:GetText()
-			local profile = GuildSearch.db.profile
-			if term and #term > 0 then
-				term = term:lower()
-				local plain = not GuildSearch.db.profile.patternMatching
-				if ((profile.searchNames and row[NAME_COL]:lower():find(term,1,plain)) or
-					(profile.searchNotes and row[NOTE_COL]:lower():find(term,1,plain)) or
-					(profile.searchOfficerNotes and row[ONOTE_COL]:lower():find(term,1,plain)) or 
-					(profile.searchRank and row[RANK_COL]:lower():find(term,1,plain)) or			
-					(profile.searchClass and row[CLASS_COL]:lower():find(term,1,plain)) or
-					(profile.searchRealm and row[REALM_COL]:lower():find(term,1,plain))) then
-					return true
+			addon.criteria.searchTerm = guildFrame.searchterm:GetText() or ""
+			addon.criteria.oper = _G.UIDropDownMenu_GetSelectedValue(guildFrame.onlineOper) or 1
+			addon.criteria.units = _G.tonumber(guildFrame.onlineUnits:GetText()) or 0
+			for name, func in pairs(addon.SearchCriteria) do
+				if func and type(func) == "function" then
+					if not func(self, row) then return false end
 				end
-
-				return false
-			else
-				return true
 			end
+			return true
 		end
 	)
 
@@ -1909,6 +1965,48 @@ function GuildSearch:CreateGuildFrame()
 
 	return guildwindow
 end
+
+addon.SearchColumns = {
+	["searchNames"] = NAME_COL,
+	["searchNotes"] = NOTE_COL,
+	["searchOfficerNotes"] = ONOTE_COL,
+	["searchRank"] = RANK_COL,
+	["searchClass"] = CLASS_COL,
+	["searchRealm"] = REALM_COL,
+}
+
+addon.SearchCriteria = {
+	["Basic Search"] = function(table, row)
+		local term = addon.criteria.searchTerm
+		local profile = addon.db.profile
+		if term and #term > 0 then
+			term = term:lower()
+			local plain = not profile.patternMatching
+			for var, col in pairs(addon.SearchColumns) do
+				if profile[var] and row[col]:lower():find(term, 1, plain) then
+					return true
+				end
+			end
+			return false
+		else
+			return true
+		end
+	end,
+	["Last Online"] = function(table, row)
+		local oper = addon.criteria.oper
+		local units = addon.criteria.units
+		if units and units > 0 and (oper == 1 or oper == 2) then
+			local days = (_G.time() - row[LASTONLINESECS_COL]) / 86400
+			if oper == 1 then
+				return days >= units
+			else
+				return days <= units
+			end
+		else
+			return true
+		end 
+	end,
+}
 
 local resultsFmt = "%d %s"
 local timeFmt = "%s: %s"

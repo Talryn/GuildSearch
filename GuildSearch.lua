@@ -640,6 +640,12 @@ function GuildSearch:PopulateGuildData()
 				local diff = (((years*365)+(months*30)+days)*24+hours)*60*60
 				lastOnline = _G.time() - diff
 				lastOnlineDate = _G.date("%Y/%m/%d %H:00", lastOnline)
+			else
+				if self.db.profile.debug then
+					local fmt = "Last online not found for %s [%s, %s, %s, %s]"
+					self:Print(fmt:format(name, _G.tostring(online), _G.tostring(years), _G.tostring(months),
+						_G.tostring(days), _G.tostring(hours)))
+				end
 			end
 
 			local optional = ""
@@ -1780,7 +1786,7 @@ function GuildSearch:CreateGuildFrame()
 	if self.db.profile.hideOnEsc then
 		searchterm:SetScript("OnEscapePressed",
 		    function(this)
-		        this.ClearSearchTerm()
+		        this:GetParent():ClearSearchTerm()
 		        this:GetParent():Hide()
 		    end)
 	end

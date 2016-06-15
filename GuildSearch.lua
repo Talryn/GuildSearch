@@ -640,9 +640,13 @@ function GuildSearch:PopulateGuildData()
 				local diff = (((years*365)+(months*30)+days)*24+hours)*60*60
 				lastOnline = _G.time() - diff
 				lastOnlineDate = _G.date("%Y/%m/%d %H:00", lastOnline)
+			elseif not (online and years and months and days and hours) then
+				-- If all of these are false/nil then the user is Remote
+				lastOnline = _G.time()
+				lastOnlineDate = _G.date("%Y/%m/%d %H:%M", lastOnline)
 			else
 				if self.db.profile.debug then
-					local fmt = "Last online not found for %s [%s, %s, %s, %s]"
+					local fmt = "Last online not set for %s [%s, %s, %s, %s]"
 					self:Print(fmt:format(name, _G.tostring(online), _G.tostring(years), _G.tostring(months),
 						_G.tostring(days), _G.tostring(hours)))
 				end
@@ -1764,9 +1768,9 @@ function GuildSearch:CreateGuildFrame()
 	end
 
 	guildwindow.ClearSearchTerm = function(this)
-        guildwindow.searchterm:SetText("")
-		guildwindow.onlineUnits:SetText("0")
-        guildwindow:Hide()
+        guildFrame.searchterm:SetText("")
+		guildFrame.onlineUnits:SetText("0")
+		_G.UIDropDownMenu_SetSelectedValue(guildFrame.onlineOper, 1)
 	end
 
 	local table = ScrollingTable:CreateST(cols, 19, nil, nil, guildwindow);
@@ -1786,8 +1790,8 @@ function GuildSearch:CreateGuildFrame()
 	if self.db.profile.hideOnEsc then
 		searchterm:SetScript("OnEscapePressed",
 		    function(this)
-		        this:GetParent():ClearSearchTerm()
-		        this:GetParent():Hide()
+		        guildFrame:ClearSearchTerm()
+		        guildFrame:Hide()
 		    end)
 	end
 
@@ -1813,8 +1817,8 @@ function GuildSearch:CreateGuildFrame()
 	clearbutton:SetPoint("LEFT", searchbutton, "RIGHT", 10, 0)
 	clearbutton:SetScript("OnClick",
 		function(this)
-			this.ClearSearchTerm()
-			this.SortData()
+			guildFrame.ClearSearchTerm()
+			guildFrame.SortData()
 		end)
 
 
@@ -1833,8 +1837,8 @@ function GuildSearch:CreateGuildFrame()
 	if self.db.profile.hideOnEsc then
 		onlineUnits:SetScript("OnEscapePressed",
 		    function(this)
-		        this.ClearSearchTerm()
-		        this:GetParent():Hide()
+		        guildFrame:ClearSearchTerm()
+		        guildFrame:Hide()
 		    end)
 	end
 
@@ -1846,7 +1850,7 @@ function GuildSearch:CreateGuildFrame()
 		local operators = { ">=", "<=" }
 		local setOperValue = function(self) 
         	_G.UIDropDownMenu_SetSelectedValue(onlineOper, self.value)
-			guildwindow.SortData()
+			guildFrame.SortData()
        	end
         for i, op in ipairs(operators) do
             local info = _G.UIDropDownMenu_CreateInfo()

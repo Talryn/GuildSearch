@@ -8,12 +8,31 @@ local ipairs = _G.ipairs
 local type = _G.type
 
 local GuildSearch = _G.LibStub("AceAddon-3.0"):NewAddon("GuildSearch", "AceConsole-3.0", "AceEvent-3.0")
+local LibAlts = LibStub("LibAlts-1.0")
+local L = _G.LibStub("AceLocale-3.0"):GetLocale("GuildSearch", true)
+local AGU = _G.LibStub("AceGUI-3.0")
+local LDB = _G.LibStub("LibDataBroker-1.1")
+local icon = _G.LibStub("LibDBIcon-1.0")
 
 local ADDON_NAME, addon = ...
 local ADDON_VERSION = "@project-version@"
 
 addon.addonName = "Guild Search"
-addon.criteria = {}
+addon.criteria = {
+	searchTerm = "",
+	oper = 1,
+	units = "0",
+	mainaltFilter = 1,
+}
+addon.onlineOperators = {
+	">=", 
+	"<="
+}
+addon.mainaltOptions = {
+	L["All"],
+	L["Mains"],
+	L["Alts"],
+}
 
 -- Try to remove the Git hash at the end, otherwise return the passed in value.
 local function cleanupVersion(version)
@@ -33,11 +52,6 @@ addon.addonVersion = cleanupVersion("@project-version@")
 addon.CURRENT_BUILD, addon.CURRENT_INTERNAL, 
   addon.CURRENT_BUILD_DATE, addon.CURRENT_UI_VERSION = _G.GetBuildInfo()
 addon.WoD = addon.CURRENT_UI_VERSION >= 60000
-
-local L = _G.LibStub("AceLocale-3.0"):GetLocale("GuildSearch", true)
-local AGU = _G.LibStub("AceGUI-3.0")
-local LDB = _G.LibStub("LibDataBroker-1.1")
-local icon = _G.LibStub("LibDBIcon-1.0")
 
 local GREEN = "|cff00ff00"
 local YELLOW = "|cffffff00"
@@ -93,6 +107,14 @@ local ColumnWidths = {
 		optional = 100,
 	},
 }
+local Heights = {
+	["default"] = {
+		["guildFrame"] = 450,
+	},
+	["1000"] = {
+		["guildFrame"] = 450,
+	},		
+}
 
 local defaults = {
 	profile = {
@@ -100,6 +122,7 @@ local defaults = {
 			hide = true,
 		},
 		columnWidths = ColumnWidths["default"],
+		heights = Heights["default"],
 		verbose = false,
 		debug = false,
 		searchNames = true,
@@ -115,6 +138,7 @@ local defaults = {
 		main_window_x = 0,
 		main_window_y = 0,
 		hideOnEsc = true,
+		advanced = false,
 	}
 }
 
@@ -570,6 +594,9 @@ function GuildSearch:OnEnable()
 	
 	memberDetailFrame = self:CreateMemberDetailsFrame()
 	bulkUpdateFrame = self:CreateBulkRankUpdateFrame()
+	
+    addon.guildName = _G.GetGuildInfo("player")
+    addon.guildSource = LibAlts and LibAlts.GUILD_PREFIX..addon.guildName or ""
 end
 
 function GuildSearch:OnDisable()
@@ -989,11 +1016,11 @@ function GuildSearch:CreateBulkRankUpdateFrame()
 	cancelbutton:SetPoint("BOTTOM", rankwindow, "BOTTOM", 60, 20)
 	cancelbutton:SetScript("OnClick", function(this) this:GetParent():Hide(); end)
 
-	local headertext = rankwindow:CreateFontString("GS_HeaderText", rankwindow, "GameFontNormalLarge")
+	local headertext = rankwindow:CreateFontString("GS_HeaderText", nil, "GameFontNormalLarge")
 	headertext:SetPoint("TOP", rankwindow, "TOP", 0, -20)
 	headertext:SetText(L["Guild Bulk Rank Update"])
 
-    local oldRankLabel = rankwindow:CreateFontString("GS_OldRankLabel", rankwindow, "GameFontNormal")
+    local oldRankLabel = rankwindow:CreateFontString("GS_OldRankLabel", nil, "GameFontNormal")
 	oldRankLabel:SetPoint("TOP", headertext, "BOTTOM", 0, -20)
 	oldRankLabel:SetPoint("LEFT", rankwindow, "LEFT", 20, 0)
 	--rankLabel:SetFont(rankLabel:GetFont(), 14)
@@ -1040,7 +1067,7 @@ function GuildSearch:CreateBulkRankUpdateFrame()
     _G.UIDropDownMenu_SetSelectedValue(oldRankDropdown, 0)
     _G.UIDropDownMenu_JustifyText(oldRankDropdown, "LEFT")
 
-    local newRankLabel = rankwindow:CreateFontString("GS_NewRankLabel", rankwindow, "GameFontNormal")
+    local newRankLabel = rankwindow:CreateFontString("GS_NewRankLabel", nil, "GameFontNormal")
 	newRankLabel:SetPoint("TOP", oldRankLabel, "BOTTOM", 0, -20)
 	newRankLabel:SetPoint("LEFT", rankwindow, "LEFT", 20, 0)
 	--rankLabel:SetFont(rankLabel:GetFont(), 14)
@@ -1148,16 +1175,16 @@ function GuildSearch:CreateMemberDetailsFrame()
 	cancelbutton:SetPoint("BOTTOM", detailwindow, "BOTTOM", 60, 20)
 	cancelbutton:SetScript("OnClick", function(this) this:GetParent():Hide(); end)
 
-	local headertext = detailwindow:CreateFontString("GS_HeaderText", detailwindow, "GameFontNormalLarge")
+	local headertext = detailwindow:CreateFontString("GS_HeaderText", nil, "GameFontNormalLarge")
 	headertext:SetPoint("TOP", detailwindow, "TOP", 0, -20)
 	headertext:SetText(L["Guild Member Details"])
 
-	local charname = detailwindow:CreateFontString("GS_CharName", detailwindow, "GameFontNormal")
+	local charname = detailwindow:CreateFontString("GS_CharName", nil, "GameFontNormal")
 	charname:SetPoint("BOTTOM", headertext, "BOTTOM", 0, -40)
 	charname:SetFont(charname:GetFont(), 14)
 	charname:SetTextColor(1.0,1.0,1.0,1)
 
-    local rankLabel = detailwindow:CreateFontString("GS_RankLabel", detailwindow, "GameFontNormal")
+    local rankLabel = detailwindow:CreateFontString("GS_RankLabel", nil, "GameFontNormal")
 	rankLabel:SetPoint("TOP", charname, "BOTTOM", 0, -20)
 	rankLabel:SetPoint("LEFT", detailwindow, "LEFT", 20, 0)
 	--rankLabel:SetFont(rankLabel:GetFont(), 14)
@@ -1236,7 +1263,7 @@ function GuildSearch:CreateMemberDetailsFrame()
 	    end)
 	detailwindow.removebutton = removebutton
 
-	local noteHeader = detailwindow:CreateFontString("GS_NoteHeaderText", detailwindow, "GameFontNormal")
+	local noteHeader = detailwindow:CreateFontString("GS_NoteHeaderText", nil, "GameFontNormal")
 	noteHeader:SetPoint("TOPLEFT", rankLabel, "BOTTOMLEFT", 0, -15)
 	noteHeader:SetText(L["Public Note"]..":")
 
@@ -1286,7 +1313,7 @@ function GuildSearch:CreateMemberDetailsFrame()
     end)
     noteScrollArea:SetScrollChild(notebox)
 
-	local onoteHeader = detailwindow:CreateFontString("GS_OfficerNoteHeaderText", detailwindow, "GameFontNormal")
+	local onoteHeader = detailwindow:CreateFontString("GS_OfficerNoteHeaderText", nil, "GameFontNormal")
 	onoteHeader:SetPoint("TOPLEFT", publicNoteContainer, "BOTTOMLEFT", 0, -15)
 	onoteHeader:SetText(L["Officer Note"]..":")
 
@@ -1525,10 +1552,30 @@ end
 
 function GuildSearch:CreateGuildFrame()
 	local guildwindow = _G.CreateFrame("Frame", "GuildSearchWindow", _G.UIParent)
+	guildFrame = guildwindow
 	guildwindow:SetFrameStrata("DIALOG")
 	guildwindow:SetToplevel(true)
 	guildwindow:SetWidth(self.db.profile.columnWidths.window)
-	guildwindow:SetHeight(450)
+	guildwindow:SetHeight(self.db.profile.heights.guildFrame)
+
+	guildwindow.SetBasicHeight = function(self)
+		self:ClearAdvancedSearch()
+		self:SetHeight(addon.db.profile.heights.guildFrame)
+		self.advancedOptions:Hide()
+		self.table.frame:ClearAllPoints()
+		self.table.frame:SetPoint("TOP", self.searchterm, "BOTTOM", 0, -25)
+		self.table.frame:SetPoint("LEFT", self, "LEFT", 25, 0)
+		self.advancedbutton:SetText(L["Advanced"])
+	end
+
+	guildwindow.SetAdvancedHeight = function(self)
+		self:SetHeight(addon.db.profile.heights.guildFrame + 35)
+		self.advancedOptions:Show()
+		self.table.frame:ClearAllPoints()
+		self.table.frame:SetPoint("TOP", self.advancedOptions, "BOTTOM", 0, -20)
+		self.table.frame:SetPoint("LEFT", self, "LEFT", 25, 0)
+		self.advancedbutton:SetText(L["Basic"])
+	end
 
 	if self.db.profile.remember_main_pos then
 		guildwindow:SetPoint("CENTER", _G.UIParent, "CENTER",
@@ -1769,14 +1816,24 @@ function GuildSearch:CreateGuildFrame()
 
 	guildwindow.ClearSearchTerm = function(this)
         guildFrame.searchterm:SetText("")
+		guildFrame.ClearAdvancedSearch()
+	end
+
+	guildwindow.ClearAdvancedSearch = function(this)
 		guildFrame.onlineUnits:SetText("0")
-		_G.UIDropDownMenu_SetSelectedValue(guildFrame.onlineOper, 1)
+		addon.criteria.oper = 1
+		addon.criteria.mainaltFilter = 1
+		_G.UIDropDownMenu_SetText(guildFrame.onlineOper, addon.onlineOperators[1])
+		guildFrame.onlineOper.selectedValue = 1
+		_G.UIDropDownMenu_SetText(guildFrame.mainaltFilter, addon.mainaltOptions[1])
+		guildFrame.mainaltFilter.selectedValue = 1
+		--_G.UIDropDownMenu_SetSelectedValue(guildFrame.onlineOper, 1)
+		--_G.UIDropDownMenu_SetSelectedValue(guildFrame.mainaltFilter, 1)
 	end
 
 	local table = ScrollingTable:CreateST(cols, 19, nil, nil, guildwindow);
 
-	local headertext = guildwindow:CreateFontString("GS_Main_HeaderText",
-		guildwindow, "GameFontNormalLarge")
+	local headertext = guildwindow:CreateFontString("GS_Main_HeaderText", nil, "GameFontNormalLarge")
 	headertext:SetPoint("TOP", guildwindow, "TOP", 0, -20)
 	headertext:SetText(L["Guild Search"])
 
@@ -1794,9 +1851,6 @@ function GuildSearch:CreateGuildFrame()
 		        guildFrame:Hide()
 		    end)
 	end
-
-	table.frame:SetPoint("TOP", searchterm, "BOTTOM", 0, -20)
-	table.frame:SetPoint("LEFT", guildwindow, "LEFT", 25, 0)
 
 	local searchbutton = _G.CreateFrame("Button", nil, guildwindow,
 		"UIPanelButtonTemplate")
@@ -1821,16 +1875,74 @@ function GuildSearch:CreateGuildFrame()
 			guildFrame.SortData()
 		end)
 
+	guildwindow.UpdateAdvancedSearch = function(self)
+		if addon.db.profile.advanced then
+			self:SetAdvancedHeight()
+		else
+			self:SetBasicHeight()
+		end			
+	end
+		
+	local advancedbutton = _G.CreateFrame("Button", nil, guildwindow,
+		"UIPanelButtonTemplate")
+	advancedbutton:SetText(L["Advanced"])
+	advancedbutton:SetWidth(100)
+	advancedbutton:SetHeight(20)
+	advancedbutton:SetPoint("LEFT", clearbutton, "RIGHT", 10, 0)
+	advancedbutton:SetScript("OnClick",
+		function(this)
+			addon.db.profile.advanced = not addon.db.profile.advanced
+			guildFrame:UpdateAdvancedSearch()
+		end)
 
-	local unitHeader = guildwindow:CreateFontString("GS_OnlineUnitText", guildwindow, "GameFontNormal")
-	unitHeader:SetPoint("TOPRIGHT", guildwindow, "TOPRIGHT", -30, -50)
-	unitHeader:SetText(L["days"])
+	local advancedOptions = _G.CreateFrame("Frame", "GuildSearchWindow_AdvOpts", guildwindow)
+	advancedOptions:SetHeight(35)
+	advancedOptions:SetWidth(self.db.profile.columnWidths.window - 10)
+	advancedOptions:SetPoint("TOPLEFT", searchterm, "BOTTOMLEFT", 0, 0)
+	--advancedOptions:SetPoint("RIGHT", guildwindow, "RIGHT")
 
-	local onlineUnits = _G.CreateFrame("EditBox", nil, guildwindow, "InputBoxTemplate")
+	table.frame:SetPoint("TOP", searchterm, "BOTTOM", 0, -20)
+	table.frame:SetPoint("LEFT", guildwindow, "LEFT", 25, 0)
+
+	local onlineHeader = advancedOptions:CreateFontString("GS_OnlineHdrText", nil, "GameFontNormal")
+	onlineHeader:SetPoint("LEFT", advancedOptions, "LEFT", 0, 0)
+	onlineHeader:SetText(L["Last Online"])
+
+    local onlineOper = _G.CreateFrame("Button", "GS_OnlineOperDropDown", advancedOptions, "UIDropDownMenuTemplate")
+    onlineOper:ClearAllPoints()
+    onlineOper:SetPoint("LEFT", onlineHeader, "RIGHT", 10, 0)
+    onlineOper:Show()
+    onlineOper.initializeFunc = function(self, level)
+		local setOperValue = function(self)
+			addon.criteria.oper = self.value
+        	_G.UIDropDownMenu_SetSelectedValue(onlineOper, self.value)
+			guildFrame.SortData()
+       	end
+		local isChecked = function(self)
+			return addon.criteria.oper == self.value
+		end
+        for i, op in ipairs(addon.onlineOperators) do
+            local info = _G.UIDropDownMenu_CreateInfo()
+            info.text = op
+            info.value = i
+            info.arg1 = i
+            info.colorCode = WHITE
+            info.checked = isChecked
+            info.func = setOperValue
+            _G.UIDropDownMenu_AddButton(info, level)
+        end
+    end
+	_G.UIDropDownMenu_Initialize(onlineOper, onlineOper.initializeFunc)
+    _G.UIDropDownMenu_SetWidth(onlineOper, 50);
+    _G.UIDropDownMenu_SetButtonWidth(onlineOper, 70)
+    _G.UIDropDownMenu_SetSelectedValue(onlineOper, 1)
+    _G.UIDropDownMenu_JustifyText(onlineOper, "LEFT")
+
+	local onlineUnits = _G.CreateFrame("EditBox", nil, advancedOptions, "InputBoxTemplate")
 	onlineUnits:SetFontObject(_G.ChatFontNormal)
 	onlineUnits:SetWidth(40)
 	onlineUnits:SetHeight(35)
-	onlineUnits:SetPoint("RIGHT", unitHeader, "LEFT", -10, 0)
+	onlineUnits:SetPoint("LEFT", onlineOper, "RIGHT", 10, 0)
 	onlineUnits:SetNumeric(true)
 	onlineUnits:SetText("0")
 	onlineUnits:SetScript("OnEnterPressed", guildwindow.SortData)
@@ -1842,42 +1954,55 @@ function GuildSearch:CreateGuildFrame()
 		    end)
 	end
 
-    local onlineOper = _G.CreateFrame("Button", "GS_OnlineOperDropDown", guildwindow, "UIDropDownMenuTemplate")
-    onlineOper:ClearAllPoints()
-    onlineOper:SetPoint("RIGHT", onlineUnits, "LEFT", -10, 0)
-    onlineOper:Show()
-    _G.UIDropDownMenu_Initialize(onlineOper, function(self, level)
-		local operators = { ">=", "<=" }
-		local setOperValue = function(self) 
-        	_G.UIDropDownMenu_SetSelectedValue(onlineOper, self.value)
+	local unitHeader = advancedOptions:CreateFontString("GS_OnlineUnitText", nil, "GameFontNormal")
+	unitHeader:SetPoint("LEFT", onlineUnits, "RIGHT", 10, 0)
+	unitHeader:SetText(L["days"])
+
+	local mainaltHeader = advancedOptions:CreateFontString("GS_MainAltHdrText", nil, "GameFontNormal")
+	mainaltHeader:SetPoint("LEFT", unitHeader, "RIGHT", 20, 0)
+	mainaltHeader:SetText(L["Main/Alt"])
+
+    local mainaltFilter = _G.CreateFrame("Button", "GS_MainAltDropDown", advancedOptions, "UIDropDownMenuTemplate")
+    mainaltFilter:ClearAllPoints()
+    mainaltFilter:SetPoint("LEFT", mainaltHeader, "RIGHT", 0, 0)
+    mainaltFilter:Show()
+    mainaltFilter.initializeFunc = function(self, level)
+		local setValue = function(self) 
+			addon.criteria.mainaltFilter = self.value
+        	_G.UIDropDownMenu_SetSelectedValue(mainaltFilter, self.value)
 			guildFrame.SortData()
        	end
-        for i, op in ipairs(operators) do
+		local isChecked = function(self)
+			return addon.criteria.mainaltFilter == self.value
+		end
+        for i, opt in ipairs(addon.mainaltOptions) do
             local info = _G.UIDropDownMenu_CreateInfo()
-            info.text = op
+            info.text = opt
             info.value = i
             info.arg1 = i
             info.colorCode = WHITE
-            info.checked = false
-            info.func = setOperValue
+            info.checked = isChecked
+            info.func = setValue
             _G.UIDropDownMenu_AddButton(info, level)
         end
-    end)
-    _G.UIDropDownMenu_SetWidth(onlineOper, 50);
-    _G.UIDropDownMenu_SetButtonWidth(onlineOper, 70)
-    _G.UIDropDownMenu_SetSelectedValue(onlineOper, 1)
-    _G.UIDropDownMenu_JustifyText(onlineOper, "LEFT")
+    end
+	_G.UIDropDownMenu_Initialize(mainaltFilter, mainaltFilter.initializeFunc)
+    _G.UIDropDownMenu_SetWidth(mainaltFilter, 90);
+    _G.UIDropDownMenu_SetButtonWidth(mainaltFilter, 110)
+    _G.UIDropDownMenu_SetSelectedValue(mainaltFilter, 1)
+    _G.UIDropDownMenu_JustifyText(mainaltFilter, "LEFT")
 
-	local onlineHeader = guildwindow:CreateFontString("GS_OnlineHdrText", guildwindow, "GameFontNormal")
-	onlineHeader:SetPoint("RIGHT", onlineOper, "LEFT", -10, 0)
-	onlineHeader:SetText(L["Last Online"])
+	if not LibAlts then
+		mainaltHeader:Hide()
+		mainaltFilter:Hide()
+	end
 
 	local rowcounttext = guildwindow:CreateFontString(
-		"GS_Main_RowCountText", guildwindow, "GameFontNormalSmall")
+		"GS_Main_RowCountText", nil, "GameFontNormalSmall")
 	rowcounttext:SetPoint("BOTTOMLEFT", guildwindow, "BOTTOMLEFT", 20, 20)
 
 	guildwindow.updateTime = guildwindow:CreateFontString(
-		"GS_Main_UpdateTimeText", guildwindow, "GameFontNormalSmall")
+		"GS_Main_UpdateTimeText", nil, "GameFontNormalSmall")
 	guildwindow.updateTime:SetPoint(
 		"BOTTOMRIGHT", guildwindow, "BOTTOMRIGHT", -20, 20)
 
@@ -1911,6 +2036,9 @@ function GuildSearch:CreateGuildFrame()
 	guildwindow.rowcount = rowcounttext
 	guildwindow.onlineUnits = onlineUnits
 	guildwindow.onlineOper = onlineOper
+	guildwindow.advancedOptions = advancedOptions
+	guildwindow.advancedbutton = advancedbutton
+	guildwindow.mainaltFilter = mainaltFilter
 
 	table:EnableSelection(true)
 
@@ -1926,8 +2054,10 @@ function GuildSearch:CreateGuildFrame()
 
 	table:SetFilter(
 		function(self, row)
+		    addon.guildName = _G.GetGuildInfo("player")
+		    addon.guildSource = LibAlts and LibAlts.GUILD_PREFIX..addon.guildName or ""
 			addon.criteria.searchTerm = guildFrame.searchterm:GetText() or ""
-			addon.criteria.oper = _G.UIDropDownMenu_GetSelectedValue(guildFrame.onlineOper) or 1
+			addon.criteria.oper = addon.criteria.oper or 1
 			addon.criteria.units = _G.tonumber(guildFrame.onlineUnits:GetText()) or 0
 			for name, func in pairs(addon.SearchCriteria) do
 				if func and type(func) == "function" then
@@ -1965,6 +2095,8 @@ function GuildSearch:CreateGuildFrame()
 			end
 		end)
 	guildwindow:EnableMouse(true)
+
+	guildwindow:UpdateAdvancedSearch()
 
 	guildwindow:Hide()
 
@@ -2016,6 +2148,18 @@ addon.SearchCriteria = {
 			return true
 		end 
 	end,
+	["Main/Alt"] = function(table, row)
+		if not LibAlts then return true end
+		local filter = addon.criteria.mainaltFilter
+		if filter == 2 then
+			return not LibAlts:IsAltForSource(row[NAME_COL], addon.guildSource)
+			--return LibAlts:IsMainForSource(row[NAME_COL], addon.guildSource)
+		elseif filter == 3 then
+			return LibAlts:IsAltForSource(row[NAME_COL], addon.guildSource)
+		else
+			return true
+		end 
+	end
 }
 
 local resultsFmt = "%d %s"

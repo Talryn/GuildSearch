@@ -32,6 +32,9 @@ externals:
     Libs/LibDBIcon-1.0:
         url: svn://svn.wowace.com/wow/libdbicon-1-0/mainline/trunk/LibDBIcon-1.0
 
+    Libs/LibAlts-1.0:
+        url: svn://svn.wowace.com/wow/libalts-1-0/mainline/trunk
+
     Libs/LibStub:
         url: svn://svn.wowace.com/wow/libstub/mainline/trunk
         tag: latest

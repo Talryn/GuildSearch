@@ -596,7 +596,7 @@ function GuildSearch:OnEnable()
 	bulkUpdateFrame = self:CreateBulkRankUpdateFrame()
 	
     addon.guildName = _G.GetGuildInfo("player")
-    addon.guildSource = LibAlts and LibAlts.GUILD_PREFIX..addon.guildName or ""
+    addon.guildSource = LibAlts and addon.guildName and LibAlts.GUILD_PREFIX..addon.guildName or ""
 end
 
 function GuildSearch:OnDisable()

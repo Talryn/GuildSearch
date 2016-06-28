@@ -8,7 +8,7 @@ local ipairs = _G.ipairs
 local type = _G.type
 
 local GuildSearch = _G.LibStub("AceAddon-3.0"):NewAddon("GuildSearch", "AceConsole-3.0", "AceEvent-3.0")
-local LibAlts = LibStub("LibAlts-1.0")
+local LibAlts = _G.LibStub("LibAlts-1.0")
 local L = _G.LibStub("AceLocale-3.0"):GetLocale("GuildSearch", true)
 local AGU = _G.LibStub("AceGUI-3.0")
 local LDB = _G.LibStub("LibDataBroker-1.1")

@@ -501,6 +501,14 @@ function GuildSearch:GetOptions()
     return options
 end
 
+function GuildSearch:CombatCheck()
+	if _G.UnitAffectingCombat("player") then
+		self:Print(L["InCombatMessage"])
+		return true
+	end
+	return false
+end
+
 function GuildSearch:OnInitialize()
 	-- Called when the addon is loaded
 	self.db = _G.LibStub("AceDB-3.0"):New("GuildSearchDB", defaults, "Default")
@@ -532,12 +540,15 @@ function GuildSearch:OnInitialize()
 					optionsFrame:Hide()
 				else
 					self:HideGuildWindow()
+					if self:CombatCheck() then return end
+					_G.InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
 					_G.InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
 				end
 			elseif button == "LeftButton" then
 				if self:IsWindowVisible() then
 					self:HideGuildWindow()
 				else
+					if self:CombatCheck() then return end
 					local optionsFrame = _G.InterfaceOptionsFrame
 					optionsFrame:Hide()
 					self:GuildSearchHandler("")
@@ -565,10 +576,8 @@ local function splitWords(str)
 end
 
 function GuildSearch:GuildSearchHandler(input)
-	if _G.UnitAffectingCombat("player") then
-		self:Print(L["InCombatMessage"])
-		return
-	end
+	if self:CombatCheck() then return end
+
 	-- Check for any debugging commands first
 	if input and input:trim() ~= "" then
 		local cmds = splitWords(input)
@@ -824,10 +833,7 @@ function GuildSearch:StaticPopupRemoveGuildMember(name)
 end
 
 function GuildSearch:BulkRankUpdate()
-	if _G.UnitAffectingCombat("player") then
-		self:Print(L["InCombatMessage"])
-		return
-	end
+	if self:CombatCheck() then return end
 	if not bulkUpdateFrame then return end
 	bulkUpdateFrame:Show()
 end
@@ -854,10 +860,7 @@ function GuildSearch:BulkUpdateRanks(oldRank, newRank, testing)
 end
 
 function GuildSearch:SearchReplaceNotes()
-	if _G.UnitAffectingCombat("player") then
-		self:Print(L["InCombatMessage"])
-		return
-	end
+	if self:CombatCheck() then return end
 
     if ReplaceNotesFrame then return end
 

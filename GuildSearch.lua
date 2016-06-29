@@ -565,6 +565,10 @@ local function splitWords(str)
 end
 
 function GuildSearch:GuildSearchHandler(input)
+	if _G.UnitAffectingCombat("player") then
+		self:Print(L["InCombatMessage"])
+		return
+	end
 	-- Check for any debugging commands first
 	if input and input:trim() ~= "" then
 		local cmds = splitWords(input)
@@ -820,6 +824,10 @@ function GuildSearch:StaticPopupRemoveGuildMember(name)
 end
 
 function GuildSearch:BulkRankUpdate()
+	if _G.UnitAffectingCombat("player") then
+		self:Print(L["InCombatMessage"])
+		return
+	end
 	if not bulkUpdateFrame then return end
 	bulkUpdateFrame:Show()
 end
@@ -846,6 +854,11 @@ function GuildSearch:BulkUpdateRanks(oldRank, newRank, testing)
 end
 
 function GuildSearch:SearchReplaceNotes()
+	if _G.UnitAffectingCombat("player") then
+		self:Print(L["InCombatMessage"])
+		return
+	end
+
     if ReplaceNotesFrame then return end
 
     local frame = AGU:Create("Frame")

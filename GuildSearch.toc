@@ -1,4 +1,4 @@
-## Interface: 60200
+## Interface: 70000
 ## Title: Guild Search
 ## Notes: A UI for searching the guild roster.
 ## Author: Talryn

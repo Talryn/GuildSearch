@@ -693,9 +693,7 @@ function GuildSearch:PopulateGuildData()
 			end
 
 			local optional = ""
-			--if self.optionalColumn == "TotalXP" then
 			optional = charRealm
-			--end
 
 			tinsert(guildData, 
 			    {name, level, note, officernote, rank, lastOnlineDate, 

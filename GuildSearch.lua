@@ -85,6 +85,10 @@ local function parseName(name)
 	return nil
 end
 
+function addon.setGuildSource()
+	addon.guildSource = LibAlts and addon.guildName and LibAlts.GUILD_PREFIX..addon.guildName or ""
+end
+
 local ColumnWidths = {
 	["default"] = {
 		window = 700,
@@ -609,7 +613,7 @@ function GuildSearch:OnEnable()
 	bulkUpdateFrame = self:CreateBulkRankUpdateFrame()
 	
     addon.guildName = _G.GetGuildInfo("player")
-    addon.guildSource = LibAlts and addon.guildName and LibAlts.GUILD_PREFIX..addon.guildName or ""
+	addon.setGuildSource()
 end
 
 function GuildSearch:OnDisable()
@@ -663,6 +667,9 @@ function GuildSearch:PopulateGuildData()
 		local guildName, gRank, gRankIndex, realm = _G.GetGuildInfo("player")
 		local guildRealm = formatRealmName(realm)
 
+		addon.guildName = guildName
+		addon.setGuildSource()
+
 		local numMembers = _G.GetNumGuildMembers()
 		for index = 1, numMembers do
 			local name, rank, rankIndex, level, class, zone, note, 
@@ -700,6 +707,9 @@ function GuildSearch:PopulateGuildData()
 					optional, charRealm, classFileName, rankIndex, index, lastOnline})
 		end
 		addon.lastUpdate = _G.time()
+	else
+		addon.guildName = nil
+		addon.guildSource = nil
 	end
 
 	self:RefreshMemberDetails()
@@ -2069,7 +2079,7 @@ function GuildSearch:CreateGuildFrame()
 	table:SetFilter(
 		function(self, row)
 		    addon.guildName = _G.GetGuildInfo("player")
-		    addon.guildSource = LibAlts and LibAlts.GUILD_PREFIX..addon.guildName or ""
+		    addon.guildSource = addon.guildSource or ""
 			addon.criteria.searchTerm = guildFrame.searchterm:GetText() or ""
 			addon.criteria.oper = addon.criteria.oper or 1
 			addon.criteria.units = _G.tonumber(guildFrame.onlineUnits:GetText()) or 0

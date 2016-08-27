@@ -119,6 +119,14 @@ local Heights = {
 		["guildFrame"] = 450,
 	},		
 }
+local BottomRowButtons = {
+	["default"] = {
+		["spacing"] = 40,
+		["width"] = 90,
+		["height"] = 20,
+		["inset"] = 20,
+	},
+}
 
 local defaults = {
 	profile = {
@@ -127,6 +135,7 @@ local defaults = {
 		},
 		columnWidths = ColumnWidths["default"],
 		heights = Heights["default"],
+		bottomRowButtons = BottomRowButtons["default"],
 		verbose = false,
 		debug = false,
 		searchNames = true,
@@ -143,6 +152,7 @@ local defaults = {
 		main_window_y = 0,
 		hideOnEsc = true,
 		advanced = false,
+		automaticUpdate = true,
 	}
 }
 
@@ -226,6 +236,17 @@ function GuildSearch:GetOptions()
                     set = function(info, val) self.db.profile.hideOnEsc = val end,
                     get = function(info) return self.db.profile.hideOnEsc end,
         			order = 30
+                },
+        	    automaticUpdate = {
+                    name = L["Automatic Updates"],
+                    desc = L["AutomaticUpdates_OptDesc"],
+                    type = "toggle",
+                    set = function(info, val)
+						self.db.profile.automaticUpdate = val
+						self:ToggleUpdates(val)
+					end,
+                    get = function(info) return self.db.profile.automaticUpdate end,
+        			order = 40
                 },
         		displayheader2 = {
         			order = 100,
@@ -719,6 +740,11 @@ function GuildSearch:PopulateGuildData()
 		guildFrame.table:SetData(guildData, true)
 		self:UpdateRowCount()
 	end
+
+	-- If not doing automatic updates, turn off monitoring after an update.
+	if not self.db.profile.automaticUpdate then
+		self:UnregisterEvent("GUILD_ROSTER_UPDATE")
+	end
 end
 
 function GuildSearch:PLAYER_REGEN_DISABLED()
@@ -726,7 +752,7 @@ function GuildSearch:PLAYER_REGEN_DISABLED()
 end
 
 function GuildSearch:PLAYER_REGEN_ENABLED()
-	if self:IsWindowVisible() then
+	if self:IsWindowVisible() and self.db.profile.automaticUpdate then
 		self:RegisterEvent("GUILD_ROSTER_UPDATE")
 	end
 end
@@ -1553,6 +1579,21 @@ function GuildSearch:ShowMemberDetails(name, publicNote, officerNote, rank, inde
     end
 end
 
+function GuildSearch:ToggleUpdates(enable)
+	if enable and not _G.UnitAffectingCombat("player") then
+		self:RegisterEvent("GUILD_ROSTER_UPDATE")
+	else
+		self:UnregisterEvent("GUILD_ROSTER_UPDATE")
+	end
+end
+
+function GuildSearch:UpdateGuildRoster()
+	if _G.IsInGuild() then
+		self:RegisterEvent("GUILD_ROSTER_UPDATE")
+		_G.GuildRoster()
+	end	
+end
+
 function GuildSearch:ShowAndUpdateGuildFrame(input)
 	if _G.UnitAffectingCombat("player") then
 		return
@@ -1567,11 +1608,7 @@ function GuildSearch:ShowAndUpdateGuildFrame(input)
 	-- Need to turn on offline display to be able to seach them
 	_G.SetGuildRosterShowOffline(true)
 
-	-- Update the guild roster
-	if _G.IsInGuild() then
-		self:RegisterEvent("GUILD_ROSTER_UPDATE")
-		_G.GuildRoster()
-	end
+	self:UpdateGuildRoster()
 end
 
 function GuildSearch:CreateGuildFrame()
@@ -2023,18 +2060,25 @@ function GuildSearch:CreateGuildFrame()
 
 	local rowcounttext = guildwindow:CreateFontString(
 		"GS_Main_RowCountText", nil, "GameFontNormalSmall")
-	rowcounttext:SetPoint("BOTTOMLEFT", guildwindow, "BOTTOMLEFT", 20, 20)
+	rowcounttext:SetPoint("BOTTOMLEFT", guildwindow, "BOTTOMLEFT", 20, self.db.profile.bottomRowButtons.inset)
 
 	guildwindow.updateTime = guildwindow:CreateFontString(
 		"GS_Main_UpdateTimeText", nil, "GameFontNormalSmall")
 	guildwindow.updateTime:SetPoint(
-		"BOTTOMRIGHT", guildwindow, "BOTTOMRIGHT", -20, 20)
+		"BOTTOMRIGHT", guildwindow, "BOTTOMRIGHT", -20, self.db.profile.bottomRowButtons.inset)
+
+	local closebutton = _G.CreateFrame("Button", nil, guildwindow, "UIPanelButtonTemplate")
+	closebutton:SetText(L["Close"])
+	closebutton:SetWidth(self.db.profile.bottomRowButtons.width)
+	closebutton:SetHeight(self.db.profile.bottomRowButtons.height)
+	closebutton:SetPoint("BOTTOM", guildwindow, "BOTTOM", 0, self.db.profile.bottomRowButtons.inset)
+	closebutton:SetScript("OnClick", function(this) this:GetParent():Hide(); end)
 
 	local editbutton = _G.CreateFrame("Button", nil, guildwindow, "UIPanelButtonTemplate")
 	editbutton:SetText(L["Edit"])
-	editbutton:SetWidth(90)
-	editbutton:SetHeight(20)
-	editbutton:SetPoint("BOTTOM", guildwindow, "BOTTOM", -70, 20)
+	editbutton:SetWidth(self.db.profile.bottomRowButtons.width)
+	editbutton:SetHeight(self.db.profile.bottomRowButtons.height)
+	editbutton:SetPoint("RIGHT", closebutton, "LEFT", -1 * self.db.profile.bottomRowButtons.spacing, 0)
 	editbutton:SetScript("OnClick", 
 		function(this)
 		    local frame = this:GetParent()
@@ -2048,12 +2092,14 @@ function GuildSearch:CreateGuildFrame()
 			end
 		end)
 
-	local closebutton = _G.CreateFrame("Button", nil, guildwindow, "UIPanelButtonTemplate")
-	closebutton:SetText(L["Close"])
-	closebutton:SetWidth(90)
-	closebutton:SetHeight(20)
-	closebutton:SetPoint("BOTTOM", guildwindow, "BOTTOM", 70, 20)
-	closebutton:SetScript("OnClick", function(this) this:GetParent():Hide(); end)
+	local updatebutton = _G.CreateFrame("Button", nil, guildwindow, "UIPanelButtonTemplate")
+	updatebutton:SetText(L["Update"])
+	updatebutton:SetWidth(self.db.profile.bottomRowButtons.width)
+	updatebutton:SetHeight(self.db.profile.bottomRowButtons.height)
+	updatebutton:SetPoint("LEFT", closebutton, "RIGHT", self.db.profile.bottomRowButtons.spacing, 0)
+	updatebutton:SetScript("OnClick", function(this)
+		GuildSearch:UpdateGuildRoster()
+	end)
 
 	guildwindow.table = table
 	guildwindow.searchterm = searchterm

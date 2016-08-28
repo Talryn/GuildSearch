@@ -18,6 +18,7 @@ local ADDON_NAME, addon = ...
 local ADDON_VERSION = "@project-version@"
 
 addon.addonName = "Guild Search"
+addon.updateDelay = 2
 addon.criteria = {
 	searchTerm = "",
 	oper = 1,
@@ -671,9 +672,9 @@ function GuildSearch:PopulateGuildRanks()
 	self:RefreshMemberDetails()
 end
 
-local combatTimer = nil
+local updateTimer = nil
 local function CallPopulateGuildData()
-	combatTimer = false
+	updateTimer = false
 	GuildSearch:PopulateGuildData()
 end
 
@@ -838,10 +839,9 @@ function GuildSearch:UpdateMemberDetail(name, publicNote, officerNote, newRankIn
                 self:Print(noRankFoundFmt:format(i))
             end
         end
-		
-		if changed and not self.db.profile.automaticUpdate then
-			self:ToggleUpdates(true)
-			_G.GuildRoster()
+
+		if changed and not self.db.profile.automaticUpdate and not updateTimer then
+			updateTimer = _G.C_Timer.NewTimer(addon.updateDelay, CallPopulateGuildData)
 		end
     end
 end
@@ -850,9 +850,8 @@ function GuildSearch:RemoveGuildMember(name)
     if _G.CanGuildRemove() then
         _G.GuildUninvite(name)
         memberDetailFrame:Hide()
-		if not self.db.profile.automaticUpdate then
-			self:ToggleUpdates(true)
-			_G.GuildRoster()
+		if not self.db.profile.automaticUpdate and not updateTimer then
+			updateTimer = _G.C_Timer.NewTimer(addon.updateDelay, CallPopulateGuildData)
 		end
     end
 end
@@ -906,9 +905,8 @@ function GuildSearch:BulkUpdateRanks(oldRank, newRank, testing)
 			end
 		end
 	end
-	if changed and not self.db.profile.automaticUpdate then
-		self:ToggleUpdates(true)
-		_G.GuildRoster()
+	if changed and not self.db.profile.automaticUpdate and not updateTimer then
+		updateTimer = _G.C_Timer.NewTimer(addon.updateDelay, CallPopulateGuildData)
 	end
 end
 
@@ -1013,9 +1011,8 @@ function GuildSearch:ReplaceNotes(search, replace, testing)
 			end
 		end
 	end
-	if changed and not self.db.profile.automaticUpdate then
-		self:ToggleUpdates(true)
-		_G.GuildRoster()
+	if changed and not self.db.profile.automaticUpdate and not updateTimer then
+		updateTimer = _G.C_Timer.NewTimer(addon.updateDelay, CallPopulateGuildData)
 	end
 end
 
@@ -1539,6 +1536,14 @@ function GuildSearch:RefreshMemberDetails()
 		end
 	    
 		if found then
+			local pnote = memberDetailFrame.publicnote
+			if pnote and pnote.SetText then
+				pnote:SetText(publicNote)
+			end
+			local onote = memberDetailFrame.officernote
+			if onote and onote.SetText then
+				onote:SetText(officerNote)
+			end
 			self:UpdateMemberRank(rank)
 		else
 			memberDetailFrame:Hide()

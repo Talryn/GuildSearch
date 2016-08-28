@@ -804,12 +804,16 @@ function GuildSearch:UpdateMemberDetail(name, publicNote, officerNote, newRankIn
 	end
     
     if name == charname and i > 0 then
+		local changed = false
+
         if publicNote and _G.CanEditPublicNote() then
             _G.GuildRosterSetPublicNote(i, publicNote)
+			changed = true
         end
 
         if officerNote and _G.CanEditOfficerNote() then
             _G.GuildRosterSetOfficerNote(i, officerNote)
+			changed = true
         end
 
         if newRankIndex then
@@ -828,11 +832,16 @@ function GuildSearch:UpdateMemberDetail(name, publicNote, officerNote, newRankIn
                             changingRankFmt:format(charname, rankIndex, newRankIndex))
                     end
                     _G.SetGuildMemberRank(i, newRankIndex)
+					changed = true
                 end
             else
                 self:Print(noRankFoundFmt:format(i))
             end
         end
+		
+		if changed then
+			self:ToggleUpdates(true)
+		end
     end
 end
 
@@ -840,6 +849,7 @@ function GuildSearch:RemoveGuildMember(name)
     if _G.CanGuildRemove() then
         _G.GuildUninvite(name)
         memberDetailFrame:Hide()
+		self:ToggleUpdates(true)
     end
 end
 
@@ -873,6 +883,7 @@ function GuildSearch:BulkRankUpdate()
 end
 
 function GuildSearch:BulkUpdateRanks(oldRank, newRank, testing)
+	local changed = false
 	for i = 1, _G.GetNumGuildMembers() do
 		local name, rank, rankIndex = _G.GetGuildRosterInfo(i)
 		local targetIndex = rankIndex + 1
@@ -883,6 +894,7 @@ function GuildSearch:BulkUpdateRanks(oldRank, newRank, testing)
 					self:Print("Updating ".._G.tostring(name))
 				else
 					_G.SetGuildMemberRank(i, newRank)
+					changed = true
 				end
 			else
 				local fmt = "Cannot update %s [%s]"
@@ -890,7 +902,9 @@ function GuildSearch:BulkUpdateRanks(oldRank, newRank, testing)
 			end
 		end
 	end
-
+	if changed then
+		self:ToggleUpdates(true)
+	end
 end
 
 function GuildSearch:SearchReplaceNotes()
@@ -966,6 +980,7 @@ function GuildSearch:SearchReplaceNotes()
 end
 
 function GuildSearch:ReplaceNotes(search, replace, testing)
+	local changed = false
 	for i = 1, _G.GetNumGuildMembers() do
 		local name, rank, rankIndex, level, class, zone, note, onote = _G.GetGuildRosterInfo(i)
 		if note and note ~= "" then
@@ -976,6 +991,7 @@ function GuildSearch:ReplaceNotes(search, replace, testing)
 					self:Print(fmt:format(name, note, result))
 				else
 					_G.GuildRosterSetPublicNote(i, result)
+					changed = true
 				end
 			end
 		end
@@ -987,9 +1003,13 @@ function GuildSearch:ReplaceNotes(search, replace, testing)
 					self:Print(fmt:format(name, onote, result))
 				else
 					_G.GuildRosterSetOfficerNote(i, result)
+					changed = true
 				end
 			end
 		end
+	end
+	if changed then
+		self:ToggleUpdates(true)
 	end
 end
 

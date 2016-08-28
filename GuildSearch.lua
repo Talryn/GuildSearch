@@ -839,8 +839,9 @@ function GuildSearch:UpdateMemberDetail(name, publicNote, officerNote, newRankIn
             end
         end
 		
-		if changed then
+		if changed and not self.db.profile.automaticUpdate then
 			self:ToggleUpdates(true)
+			_G.GuildRoster()
 		end
     end
 end
@@ -849,7 +850,10 @@ function GuildSearch:RemoveGuildMember(name)
     if _G.CanGuildRemove() then
         _G.GuildUninvite(name)
         memberDetailFrame:Hide()
-		self:ToggleUpdates(true)
+		if not self.db.profile.automaticUpdate then
+			self:ToggleUpdates(true)
+			_G.GuildRoster()
+		end
     end
 end
 
@@ -902,8 +906,9 @@ function GuildSearch:BulkUpdateRanks(oldRank, newRank, testing)
 			end
 		end
 	end
-	if changed then
+	if changed and not self.db.profile.automaticUpdate then
 		self:ToggleUpdates(true)
+		_G.GuildRoster()
 	end
 end
 
@@ -1008,8 +1013,9 @@ function GuildSearch:ReplaceNotes(search, replace, testing)
 			end
 		end
 	end
-	if changed then
+	if changed and not self.db.profile.automaticUpdate then
 		self:ToggleUpdates(true)
+		_G.GuildRoster()
 	end
 end
 

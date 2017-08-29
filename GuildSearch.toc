@@ -1,4 +1,4 @@
-## Interface: 70200
+## Interface: 70300
 ## Title: Guild Search
 ## Notes: A UI for searching the guild roster.
 ## Author: Talryn

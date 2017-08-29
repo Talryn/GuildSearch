@@ -165,7 +165,6 @@ local memberDetailFrame = nil
 local bulkUpdateFrame = nil
 local guildRanks = {}
 local guildRanksRev = {}
-local guildRanksAuth = {}
 local realmName = _G.GetRealmName()
 local realmNameAbbrv = formatRealmName(realmName)
 addon.lastUpdate = nil
@@ -659,14 +658,6 @@ function GuildSearch:PopulateGuildRanks()
 	_G.wipe(guildRanksRev)
 	for k,v in pairs(guildRanks) do
 		guildRanksRev[v] = k
-	end
-
-	_G.wipe(guildRanksAuth)
-	for i = 1, numRanks do
-		_G.GuildControlSetRank(i)
-		local requiresAuth = _G.select(18, _G.GuildControlGetRankFlags()) and 
-			true or false
-		guildRanksAuth[i] = requiresAuth
 	end
 
 	self:RefreshMemberDetails()

@@ -635,6 +635,10 @@ function GuildSearch:OnEnable()
 	
     addon.guildName = _G.GetGuildInfo("player")
 	addon.setGuildSource()
+	
+	if _G.GuildFrame_LoadUI and type(_G.GuildFrame_LoadUI) == "function" then
+		_G.GuildFrame_LoadUI()
+	end
 end
 
 function GuildSearch:OnDisable()
@@ -1427,6 +1431,19 @@ function GuildSearch:CreateMemberDetailsFrame()
     end)
     onoteScrollArea:SetScrollChild(onotebox)
 
+	local showbutton = _G.CreateFrame("Button", nil, detailwindow, "UIPanelButtonTemplate")
+	showbutton:SetText(L["Show"])
+	showbutton:SetWidth(60)
+	showbutton:SetHeight(20)
+	showbutton:SetPoint("TOP", detailwindow, "TOP", 0, -10)
+	showbutton:SetPoint("RIGHT", detailwindow, "RIGHT", -12, 0)
+	showbutton:SetScript("OnClick",
+	    function(this)
+			local frame = this:GetParent()
+			GuildSearch:DefaultUI_DisplayGuildMember(frame.index)
+	    end)
+	detailwindow.showbutton = showbutton
+
 	detailwindow.charname = charname
 	detailwindow.publicnote = notebox
 	detailwindow.officernote = onotebox
@@ -1447,6 +1464,31 @@ function GuildSearch:CreateMemberDetailsFrame()
 	detailwindow:Hide()
 
 	return detailwindow
+end
+
+function GuildSearch:DefaultUI_DisplayGuildMember(index)
+	-- Verify frames exist.
+	if not (_G.GuildFrame and _G.GuildMemberDetailFrame and _G.GuildFrameTab2) then
+		self:Print("Could not find guild frames!")
+		return
+	end
+	-- Verify the methods exist.
+	if not (_G.GuildRoster_SetView and _G.GuildRoster_Update and _G.SetGuildRosterSelection and 		_G.GuildFrame_Toggle) then
+		self:Print("Could not find guild functions!")
+		return
+	end
+	--_G.GuildFrame_LoadUI()
+	_G.SetGuildRosterSelection(index or 0)
+	_G.GuildFrame_Toggle()
+	_G.GuildFrame:Show()
+	--_G.GuildFrame_TabClicked(GuildFrameTab2)
+	_G.GuildFrameTab2:Click()
+	--_G.GuildFrame_ShowPanel("GuildRosterFrame")
+	_G.GuildRoster_SetView("guildStatus")
+	_G.GuildRoster_Update()
+	_G.GuildFrame:Show()
+	_G.GuildMemberDetailFrame:Show()
+	_G.SetGuildRosterSelection(index or 0)
 end
 
 local MemberDetailsFrame = nil

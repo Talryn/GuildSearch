@@ -7,6 +7,8 @@
 ## X-Embeds: Ace3
 ## X-Category: Interface Enhancements 
 ## SavedVariables: GuildSearchDB
+## X-Curse-Project-ID: 25054
+## X-WoWI-ID: 17474
 
 embeds.xml
 

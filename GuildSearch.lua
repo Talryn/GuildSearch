@@ -26,7 +26,7 @@ addon.criteria = {
 	mainaltFilter = 1,
 }
 addon.onlineOperators = {
-	">=", 
+	">=",
 	"<="
 }
 addon.mainaltOptions = {
@@ -50,9 +50,8 @@ end
 addon.addonTitle = _G.GetAddOnMetadata(ADDON_NAME,"Title")
 addon.addonVersion = cleanupVersion("@project-version@")
 
-addon.CURRENT_BUILD, addon.CURRENT_INTERNAL, 
+addon.CURRENT_BUILD, addon.CURRENT_INTERNAL,
   addon.CURRENT_BUILD_DATE, addon.CURRENT_UI_VERSION = _G.GetBuildInfo()
-addon.WoD = addon.CURRENT_UI_VERSION >= 60000
 
 local GREEN = "|cff00ff00"
 local YELLOW = "|cffffff00"
@@ -118,7 +117,7 @@ local Heights = {
 	},
 	["1000"] = {
 		["guildFrame"] = 450,
-	},		
+	},
 }
 local BottomRowButtons = {
 	["default"] = {
@@ -377,7 +376,7 @@ function GuildSearch:GetOptions()
 					max = 3000,
 					width = "full",
 					step = 1,
-					set = function(info, val) 
+					set = function(info, val)
 						self.db.profile.columnWidths.window = val
 					end,
 					get = function(info,val) return
@@ -392,7 +391,7 @@ function GuildSearch:GetOptions()
 					min = 0,
 					max = 300,
 					step = 1,
-					set = function(info, val) 
+					set = function(info, val)
 						self.db.profile.columnWidths.name = val
 					end,
 					get = function(info,val) return
@@ -407,7 +406,7 @@ function GuildSearch:GetOptions()
 					min = 0,
 					max = 300,
 					step = 1,
-					set = function(info, val) 
+					set = function(info, val)
 						self.db.profile.columnWidths.level = val
 					end,
 					get = function(info,val) return
@@ -422,7 +421,7 @@ function GuildSearch:GetOptions()
 					min = 0,
 					max = 300,
 					step = 1,
-					set = function(info, val) 
+					set = function(info, val)
 						self.db.profile.columnWidths.note = val
 					end,
 					get = function(info,val) return
@@ -437,7 +436,7 @@ function GuildSearch:GetOptions()
 					min = 0,
 					max = 300,
 					step = 1,
-					set = function(info, val) 
+					set = function(info, val)
 						self.db.profile.columnWidths.onote = val
 					end,
 					get = function(info,val) return
@@ -452,7 +451,7 @@ function GuildSearch:GetOptions()
 					min = 0,
 					max = 300,
 					step = 1,
-					set = function(info, val) 
+					set = function(info, val)
 						self.db.profile.columnWidths.rank = val
 					end,
 					get = function(info,val) return
@@ -467,7 +466,7 @@ function GuildSearch:GetOptions()
 					min = 0,
 					max = 300,
 					step = 1,
-					set = function(info, val) 
+					set = function(info, val)
 						self.db.profile.columnWidths.lastOnline = val
 					end,
 					get = function(info,val) return
@@ -482,7 +481,7 @@ function GuildSearch:GetOptions()
 					min = 0,
 					max = 300,
 					step = 1,
-					set = function(info, val) 
+					set = function(info, val)
 						self.db.profile.columnWidths.optional = val
 					end,
 					get = function(info,val) return
@@ -616,7 +615,7 @@ function GuildSearch:GuildSearchHandler(input)
 				self:Print("Debugging off.")
 				return
 			end
-		end		
+		end
 	end
 
 	self:ShowAndUpdateGuildFrame(input)
@@ -629,13 +628,13 @@ function GuildSearch:OnEnable()
 	self:RegisterEvent("PLAYER_REGEN_ENABLED")
 	self:RegisterEvent("GUILD_ROSTER_UPDATE")
 	self:RegisterEvent("GUILD_RANKS_UPDATE")
-	
+
 	memberDetailFrame = self:CreateMemberDetailsFrame()
 	bulkUpdateFrame = self:CreateBulkRankUpdateFrame()
-	
+
     addon.guildName = _G.GetGuildInfo("player")
 	addon.setGuildSource()
-	
+
 	if _G.GuildFrame_LoadUI and type(_G.GuildFrame_LoadUI) == "function" then
 		_G.GuildFrame_LoadUI()
 	end
@@ -679,7 +678,7 @@ function GuildSearch:PopulateGuildData()
 	end
 
 	_G.wipe(guildData)
-	
+
 	if _G.IsInGuild() then
 		local guildName, gRank, gRankIndex, realm = _G.GetGuildInfo("player")
 		local guildRealm = formatRealmName(realm)
@@ -689,7 +688,7 @@ function GuildSearch:PopulateGuildData()
 
 		local numMembers = _G.GetNumGuildMembers()
 		for index = 1, numMembers do
-			local name, rank, rankIndex, level, class, zone, note, 
+			local name, rank, rankIndex, level, class, zone, note,
 				officernote, online, status, classFileName = _G.GetGuildRosterInfo(index)
 
 			local nameOnly, realmOnly = parseName(name)
@@ -719,8 +718,8 @@ function GuildSearch:PopulateGuildData()
 			local optional = ""
 			optional = charRealm
 
-			tinsert(guildData, 
-			    {name, level, note, officernote, rank, lastOnlineDate, 
+			tinsert(guildData,
+			    {name, level, note, officernote, rank, lastOnlineDate,
 					optional, charRealm, classFileName, rankIndex, index, lastOnline})
 		end
 		addon.lastUpdate = _G.time()
@@ -790,7 +789,7 @@ function GuildSearch:UpdateMemberDetail(name, publicNote, officerNote, newRankIn
 
 	local numMembers = _G.GetNumGuildMembers()
 	local i = 0
-	local charname, rank, rankIndex, level, class, zone, note, 
+	local charname, rank, rankIndex, level, class, zone, note,
 		officernote, online, status, classFileName
 
     while name ~= charname and i < numMembers do
@@ -798,7 +797,7 @@ function GuildSearch:UpdateMemberDetail(name, publicNote, officerNote, newRankIn
 		charname, rank, rankIndex, level, class, zone, note, officernote,
 			online, status, classFileName = _G.GetGuildRosterInfo(i)
 	end
-    
+
     if name == charname and i > 0 then
 		local changed = false
 
@@ -853,21 +852,21 @@ function GuildSearch:RemoveGuildMember(name)
 end
 
 function GuildSearch:StaticPopupRemoveGuildMember(name)
-	_G.StaticPopupDialogs["GuildSearch_RemoveGuildMember"] = 
+	_G.StaticPopupDialogs["GuildSearch_RemoveGuildMember"] =
 	    _G.StaticPopupDialogs["GuildSearch_RemoveGuildMember"] or {
-					text = L["GUILD_REMOVE_CONFIRMATION"], 
-					button1 = _G.ACCEPT, 
+					text = L["GUILD_REMOVE_CONFIRMATION"],
+					button1 = _G.ACCEPT,
 					button2 = _G.CANCEL,
 					whileDead = true,
 					hideOnEscape = true,
 					showAlert = true,
 					timeout = 0,
                     enterClicksFirstButton = false,
-					OnAccept = function(self, data) 
+					OnAccept = function(self, data)
 					    GuildSearch:RemoveGuildMember(data)
 					end,
 				}
-	_G.StaticPopupDialogs["GuildSearch_RemoveGuildMember"].hideOnEscape = 
+	_G.StaticPopupDialogs["GuildSearch_RemoveGuildMember"].hideOnEscape =
 		self.db.profile.hideOnEsc
     local dialog = _G.StaticPopup_Show("GuildSearch_RemoveGuildMember", name)
     if dialog then
@@ -976,7 +975,7 @@ function GuildSearch:SearchReplaceNotes()
 			frame:Hide()
         end)
     frame:AddChild(testButton)
-	
+
 end
 
 function GuildSearch:ReplaceNotes(search, replace, testing)
@@ -1038,7 +1037,7 @@ function GuildSearch:VerifyBulkUpdateRanks(oldRank, newRank)
 
 	local highestRank = 2
 	local lowestRank = _G.GuildControlGetNumRanks()
-	if oldRank >= highestRank and oldRank <= lowestRank and 
+	if oldRank >= highestRank and oldRank <= lowestRank and
 		newRank >= highestRank and newRank <= lowestRank then
 	    _G.StaticPopupDialogs["GUILDSEARCH_BULK_UPDATE"].OnAccept = function(this)
             self:BulkUpdateRanks(oldRank, newRank, false)
@@ -1060,7 +1059,7 @@ function GuildSearch:CreateBulkRankUpdateFrame()
 	rankwindow:SetHeight(180)
 	rankwindow:SetPoint("CENTER", _G.UIParent)
 	rankwindow:SetBackdrop(
-		{bgFile="Interface\\ChatFrame\\ChatFrameBackground", 
+		{bgFile="Interface\\ChatFrame\\ChatFrameBackground",
 	    edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border", tile=true,
 		tileSize=32, edgeSize=32, insets={left=11, right=12, top=12, bottom=11}})
 	rankwindow:SetBackdropColor(0,0,0,1)
@@ -1126,7 +1125,7 @@ function GuildSearch:CreateBulkRankUpdateFrame()
             info.arg1 = i
             info.colorCode = WHITE
             info.checked = false -- i == lowestRank + 1
-            info.func = function(self) 
+            info.func = function(self)
                 _G.UIDropDownMenu_SetSelectedValue(oldRankDropdown, self.value)
             end
             _G.UIDropDownMenu_AddButton(info, level)
@@ -1173,7 +1172,7 @@ function GuildSearch:CreateBulkRankUpdateFrame()
             info.arg1 = i
             info.colorCode = WHITE
             info.checked = false --i == lowestRank
-            info.func = function(self) 
+            info.func = function(self)
                 _G.UIDropDownMenu_SetSelectedValue(newRankDropdown, self.value)
             end
             _G.UIDropDownMenu_AddButton(info, level)
@@ -1213,7 +1212,7 @@ function GuildSearch:CreateMemberDetailsFrame()
 	detailwindow:SetHeight(320)
 	detailwindow:SetPoint("CENTER", _G.UIParent)
 	detailwindow:SetBackdrop(
-		{bgFile="Interface\\ChatFrame\\ChatFrameBackground", 
+		{bgFile="Interface\\ChatFrame\\ChatFrameBackground",
 	    edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border", tile=true,
 		tileSize=32, edgeSize=32, insets={left=11, right=12, top=12, bottom=11}})
 	detailwindow:SetBackdropColor(0,0,0,1)
@@ -1337,7 +1336,7 @@ function GuildSearch:CreateMemberDetailsFrame()
 	--         	GuildSearch:StaticPopupRemoveGuildMember(frame.name)
 	--     end)
 	-- detailwindow.removebutton = removebutton
-	
+
 	local noteHeader = detailwindow:CreateFontString("GS_NoteHeaderText", nil, "GameFontNormal")
 	noteHeader:SetPoint("TOPLEFT", rankLabel, "BOTTOMLEFT", 0, -15)
 	noteHeader:SetText(L["Public Note"]..":")
@@ -1349,7 +1348,7 @@ function GuildSearch:CreateMemberDetailsFrame()
     --publicNoteContainer:SetPoint("TOPLEFT", detailwindow, "TOPLEFT", 20, -140)
     --publicNoteContainer:SetPoint("BOTTOMRIGHT", detailwindow, "BOTTOMRIGHT", -40, 130)
 	publicNoteContainer:SetBackdrop(
-		{bgFile="Interface\\Tooltips\\UI-Tooltip-Background", 
+		{bgFile="Interface\\Tooltips\\UI-Tooltip-Background",
 	    edgeFile="Interface\\Tooltips\\UI-Tooltip-Border", tile=true,
 		tileSize=16, edgeSize=16, insets={left=4, right=3, top=4, bottom=3}})
 	publicNoteContainer:SetBackdropColor(0,0,0,0.9)
@@ -1399,7 +1398,7 @@ function GuildSearch:CreateMemberDetailsFrame()
     --officerNoteContainer:SetPoint("TOPLEFT", detailwindow, "TOPLEFT", 20, -220)
     --officerNoteContainer:SetPoint("BOTTOMRIGHT", detailwindow, "BOTTOMRIGHT", -40, 50)
 	officerNoteContainer:SetBackdrop(
-		{bgFile="Interface\\Tooltips\\UI-Tooltip-Background", 
+		{bgFile="Interface\\Tooltips\\UI-Tooltip-Background",
 	    edgeFile="Interface\\Tooltips\\UI-Tooltip-Border", tile=true,
 		tileSize=16, edgeSize=16, insets={left=4, right=3, top=4, bottom=3}})
 	officerNoteContainer:SetBackdropColor(0,0,0,0.9)
@@ -1575,7 +1574,7 @@ function GuildSearch:RefreshMemberDetails()
 				index = data[INDEX_COL]
 			end
 		end
-	    
+
 		if found then
 			local pnote = memberDetailFrame.publicnote
 			if pnote and pnote.SetText then
@@ -1664,7 +1663,7 @@ function GuildSearch:UpdateGuildRoster()
 	if _G.IsInGuild() then
 		self:RegisterEvent("GUILD_ROSTER_UPDATE")
 		_G.GuildRoster()
-	end	
+	end
 end
 
 function GuildSearch:ShowAndUpdateGuildFrame(input)
@@ -1831,25 +1830,25 @@ function GuildSearch:CreateGuildFrame()
 		["comparesort"] = function (st, rowa, rowb, col)
 				local cella, cellb = st:GetCell(rowa, col), st:GetCell(rowb, col);
 				local a1, b1 = cella, cellb;
-				if _G.type(a1) == 'table' then  
-					a1 = a1.value; 
+				if _G.type(a1) == 'table' then
+					a1 = a1.value;
 				end
-				if _G.type(b1) == 'table' then 
+				if _G.type(b1) == 'table' then
 					b1 = b1.value;
-				end 
+				end
 				local column = st.cols[col];
-		
-				if _G.type(a1) == "function" then 
-					if (cella.args) then 
+
+				if _G.type(a1) == "function" then
+					if (cella.args) then
 						a1 = a1(_G.unpack(cella.args))
 					else
 						a1 = a1(st.data, self.cols, rowa, col, st);
 					end
 				end
-				if _G.type(b1) == "function" then 
-					if (cellb.args) then 
+				if _G.type(b1) == "function" then
+					if (cellb.args) then
 						b1 = b1(_G.unpack(cellb.args))
-					else	
+					else
 						b1 = b1(st.data, st.cols, rowb, col, st);
 					end
 				end
@@ -1857,11 +1856,11 @@ function GuildSearch:CreateGuildFrame()
 				local valuea = guildRanksRev[a1] or 11
 				local valueb = guildRanksRev[b1] or 11
 
-				if valuea == valueb then 
+				if valuea == valueb then
 					if column.sortnext then
 						local nextcol = st.cols[column.sortnext];
-						if not(nextcol.sort) then 
-							if nextcol.comparesort then 
+						if not(nextcol.sort) then
+							if nextcol.comparesort then
 								return nextcol.comparesort(st, rowa, rowb, column.sortnext);
 							else
 								return st:CompareSort(rowa, rowb, column.sortnext);
@@ -1870,12 +1869,12 @@ function GuildSearch:CreateGuildFrame()
 							return false;
 						end
 					else
-						return false; 
-					end 
+						return false;
+					end
 				else
 					local direction = column.sort or column.defaultsort or "asc"
-					-- The comparisons below are reversed since the numeric 
-					-- rank order is reversed (lower is higher). 
+					-- The comparisons below are reversed since the numeric
+					-- rank order is reversed (lower is higher).
 					if direction:lower() == "asc" then
 						return valuea > valueb
 					else
@@ -2014,9 +2013,9 @@ function GuildSearch:CreateGuildFrame()
 			self:SetAdvancedHeight()
 		else
 			self:SetBasicHeight()
-		end			
+		end
 	end
-		
+
 	local advancedbutton = _G.CreateFrame("Button", nil, guildwindow,
 		"UIPanelButtonTemplate")
 	advancedbutton:SetText(L["Advanced"])
@@ -2101,7 +2100,7 @@ function GuildSearch:CreateGuildFrame()
     mainaltFilter:SetPoint("LEFT", mainaltHeader, "RIGHT", 0, 0)
     mainaltFilter:Show()
     mainaltFilter.initializeFunc = function(self, level)
-		local setValue = function(self) 
+		local setValue = function(self)
 			addon.criteria.mainaltFilter = self.value
         	_G.UIDropDownMenu_SetSelectedValue(mainaltFilter, self.value)
 			guildFrame.SortData()
@@ -2144,7 +2143,7 @@ function GuildSearch:CreateGuildFrame()
 	closebutton:SetText(L["Close"])
 	closebutton:SetWidth(self.db.profile.bottomRowButtons.width)
 	closebutton:SetHeight(self.db.profile.bottomRowButtons.height)
-	closebutton:SetPoint("BOTTOMRIGHT", guildwindow, "BOTTOM", 
+	closebutton:SetPoint("BOTTOMRIGHT", guildwindow, "BOTTOM",
 		-0.5 * self.db.profile.bottomRowButtons.spacing, self.db.profile.bottomRowButtons.inset)
 	closebutton:SetScript("OnClick", function(this) this:GetParent():Hide(); end)
 
@@ -2153,14 +2152,14 @@ function GuildSearch:CreateGuildFrame()
 	editbutton:SetWidth(self.db.profile.bottomRowButtons.width)
 	editbutton:SetHeight(self.db.profile.bottomRowButtons.height)
 	editbutton:SetPoint("RIGHT", closebutton, "LEFT", -1 * self.db.profile.bottomRowButtons.spacing, 0)
-	editbutton:SetScript("OnClick", 
+	editbutton:SetScript("OnClick",
 		function(this)
 		    local frame = this:GetParent()
 			if frame.table:GetSelection() then
 				local row = frame.table:GetRow(frame.table:GetSelection())
 				if row[NAME_COL] and #row[NAME_COL] > 0 then
 					self:ShowMemberDetails(
-					    row[NAME_COL], row[NOTE_COL], 
+					    row[NAME_COL], row[NOTE_COL],
 					    row[ONOTE_COL], row[RANKNUM_COL], row[INDEX_COL])
 				end
 			end
@@ -2248,7 +2247,7 @@ function GuildSearch:CreateGuildFrame()
 				y = y - _G.GetScreenHeight()/2
 				x = x / self:GetScale()
 				y = y / self:GetScale()
-				GuildSearch.db.profile.main_window_x, 
+				GuildSearch.db.profile.main_window_x,
 				GuildSearch.db.profile.main_window_y = x, y
 				self:SetUserPlaced(false);
 			end
@@ -2259,7 +2258,7 @@ function GuildSearch:CreateGuildFrame()
 
 	guildwindow:Hide()
 
-	guildwindow:HookScript("OnHide", 
+	guildwindow:HookScript("OnHide",
 		function(self)
 			self:UnregisterEvent("GUILD_ROSTER_UPDATE")
 		end)
@@ -2305,7 +2304,7 @@ addon.SearchCriteria = {
 			end
 		else
 			return true
-		end 
+		end
 	end,
 	["Main/Alt"] = function(table, row)
 		if not LibAlts then return true end
@@ -2317,7 +2316,7 @@ addon.SearchCriteria = {
 			return LibAlts:IsAltForSource(row[NAME_COL], addon.guildSource)
 		else
 			return true
-		end 
+		end
 	end
 }
 
@@ -2329,11 +2328,11 @@ function GuildSearch:UpdateRowCount()
     if table and table.filtered and _G.type(table.filtered) == "table" then
         count = #table.filtered
     end
-    
+
     guildFrame.rowcount:SetText(resultsFmt:format(count, L["results"]))
 		local updateText = ""
 		if addon.lastUpdate then
-			updateText = timeFmt:format(L["Updated"], 
+			updateText = timeFmt:format(L["Updated"],
 				_G.date("%H:%M:%S", addon.lastUpdate) or "")
 		end
 		guildFrame.updateTime:SetText(updateText)

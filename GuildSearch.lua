@@ -1883,10 +1883,10 @@ function GuildSearch:CreateGuildFrame()
 						return false;
 					end
 				else
-					local direction = column.sort or column.defaultsort or "asc"
+					local direction = column.sort or column.defaultsort or ScrollingTable.SORT_DSC
 					-- The comparisons below are reversed since the numeric
 					-- rank order is reversed (lower is higher).
-					if direction:lower() == "asc" then
+					if direction == ScrollingTable.SORT_ASC then
 						return valuea > valueb
 					else
 						return valuea < valueb

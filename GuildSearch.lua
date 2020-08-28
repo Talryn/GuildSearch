@@ -1053,7 +1053,7 @@ function GuildSearch:VerifyBulkUpdateRanks(oldRank, newRank)
 end
 
 function GuildSearch:CreateBulkRankUpdateFrame()
-	local rankwindow = _G.CreateFrame("Frame", "GuildSearch_RankUpdateWindow", _G.UIParent)
+	local rankwindow = _G.CreateFrame("Frame", "GuildSearch_RankUpdateWindow", _G.UIParent, BackdropTemplateMixin and "BackdropTemplate")
 	rankwindow:SetFrameStrata("DIALOG")
 	rankwindow:SetToplevel(true)
 	rankwindow:SetWidth(350)
@@ -1206,7 +1206,7 @@ function GuildSearch:CreateBulkRankUpdateFrame()
 end
 
 function GuildSearch:CreateMemberDetailsFrame()
-	local detailwindow = _G.CreateFrame("Frame", "GuildSearch_DetailsWindow", _G.UIParent)
+	local detailwindow = _G.CreateFrame("Frame", "GuildSearch_DetailsWindow", _G.UIParent, BackdropTemplateMixin and "BackdropTemplate")
 	detailwindow:SetFrameStrata("DIALOG")
 	detailwindow:SetToplevel(true)
 	detailwindow:SetWidth(400)
@@ -1342,7 +1342,7 @@ function GuildSearch:CreateMemberDetailsFrame()
 	noteHeader:SetPoint("TOPLEFT", rankLabel, "BOTTOMLEFT", 0, -15)
 	noteHeader:SetText(L["Public Note"]..":")
 
-    local publicNoteContainer = _G.CreateFrame("Frame", nil, detailwindow)
+    local publicNoteContainer = _G.CreateFrame("Frame", nil, detailwindow, BackdropTemplateMixin and "BackdropTemplate")
     publicNoteContainer:SetPoint("TOPLEFT", noteHeader, "BOTTOMLEFT", 0, -8)
     publicNoteContainer:SetHeight(50)
     publicNoteContainer:SetWidth(340)
@@ -1392,7 +1392,7 @@ function GuildSearch:CreateMemberDetailsFrame()
 	onoteHeader:SetPoint("TOPLEFT", publicNoteContainer, "BOTTOMLEFT", 0, -15)
 	onoteHeader:SetText(L["Officer Note"]..":")
 
-    local officerNoteContainer = _G.CreateFrame("Frame", nil, detailwindow)
+    local officerNoteContainer = _G.CreateFrame("Frame", nil, detailwindow, BackdropTemplateMixin and "BackdropTemplate")
     officerNoteContainer:SetPoint("TOPLEFT", onoteHeader, "BOTTOMLEFT", 0, -8)
     officerNoteContainer:SetHeight(50)
     officerNoteContainer:SetWidth(340)
@@ -1695,7 +1695,7 @@ function GuildSearch:ShowAndUpdateGuildFrame(input)
 end
 
 function GuildSearch:CreateGuildFrame()
-	local guildwindow = _G.CreateFrame("Frame", "GuildSearchWindow", _G.UIParent)
+	local guildwindow = _G.CreateFrame("Frame", "GuildSearchWindow", _G.UIParent, BackdropTemplateMixin and "BackdropTemplate")
 	guildFrame = guildwindow
 	guildwindow:SetFrameStrata("DIALOG")
 	guildwindow:SetToplevel(true)

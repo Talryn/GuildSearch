@@ -1,4 +1,4 @@
-## Interface: 80200
+## Interface: 80300
 ## Title: Guild Search
 ## Notes: A UI for searching the guild roster.
 ## Author: Talryn

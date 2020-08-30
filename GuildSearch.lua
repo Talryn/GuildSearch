@@ -774,7 +774,11 @@ function GuildSearch:GUILD_ROSTER_UPDATE(event, update, ...)
 		if guildFrame and guildFrame.table then
 			guildFrame.table:ClearSelection()
 		end
-		_G.GuildRoster()
+		if C_GuildInfo and C_GuildInfo.GuildRoster then
+			C_GuildInfo.GuildRoster()
+		else
+			_G.GuildRoster()
+		end
 	end
 
 	self:PopulateGuildData()
@@ -1673,7 +1677,11 @@ end
 function GuildSearch:UpdateGuildRoster()
 	if _G.IsInGuild() then
 		self:RegisterEvent("GUILD_ROSTER_UPDATE")
-		_G.GuildRoster()
+		if C_GuildInfo and C_GuildInfo.GuildRoster then
+			C_GuildInfo.GuildRoster()
+		else
+			_G.GuildRoster()
+		end
 	end
 end
 

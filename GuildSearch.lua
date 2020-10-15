@@ -811,7 +811,7 @@ function GuildSearch:UpdateMemberDetail(name, publicNote, officerNote, newRankIn
 			changed = true
         end
 
-        if officerNote and _G.CanEditOfficerNote() then
+        if officerNote and C_GuildInfo.CanEditOfficerNote() then
             _G.GuildRosterSetOfficerNote(i, officerNote)
 			changed = true
         end
@@ -1646,7 +1646,7 @@ function GuildSearch:ShowMemberDetails(name, publicNote, officerNote, rank, inde
                 detailwindow.publicnote:Disable()
             end
 
-            if _G.CanEditOfficerNote() then
+            if C_GuildInfo.CanEditOfficerNote() then
                 detailwindow.officernote:Enable()
             else
                 detailwindow.officernote:Disable()

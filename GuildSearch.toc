@@ -1,11 +1,11 @@
-## Interface: 90001
+## Interface: 90002
 ## Title: Guild Search
 ## Notes: A UI for searching the guild roster.
 ## Author: Talryn
 ## Version: @project-version@
 ## OptionalDeps: Ace3, Alts, lib-st, LibDataBroker-1.1, LibDBIcon-1.0
 ## X-Embeds: Ace3
-## X-Category: Interface Enhancements 
+## X-Category: Interface Enhancements
 ## SavedVariables: GuildSearchDB
 ## X-Curse-Project-ID: 25054
 ## X-WoWI-ID: 17474

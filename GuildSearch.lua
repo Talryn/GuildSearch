@@ -784,6 +784,13 @@ function GuildSearch:GUILD_ROSTER_UPDATE(event, update, ...)
 	self:PopulateGuildData()
 end
 
+function addon.CanEditOfficerNote()
+	if addon.Classic then
+		return _G.CanEditOfficerNote()
+	end
+	return C_GuildInfo.CanEditOfficerNote()
+end
+
 local invalidRankFmt = "Attempt to set member rank to an invalid rank. (%s)"
 local changingRankFmt = "Changing rank for %s from %s to %s."
 local noRankFoundFmt = "Invalid rank returned for roster id. (%s)"
@@ -811,7 +818,7 @@ function GuildSearch:UpdateMemberDetail(name, publicNote, officerNote, newRankIn
 			changed = true
         end
 
-        if officerNote and C_GuildInfo.CanEditOfficerNote() then
+        if officerNote and addon.CanEditOfficerNote() then
             _G.GuildRosterSetOfficerNote(i, officerNote)
 			changed = true
         end
@@ -1646,7 +1653,7 @@ function GuildSearch:ShowMemberDetails(name, publicNote, officerNote, rank, inde
                 detailwindow.publicnote:Disable()
             end
 
-            if C_GuildInfo.CanEditOfficerNote() then
+            if addon.CanEditOfficerNote() then
                 detailwindow.officernote:Enable()
             else
                 detailwindow.officernote:Disable()

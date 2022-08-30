@@ -13,6 +13,7 @@
 ## SavedVariables: GuildSearchDB
 ## X-Curse-Project-ID: 25054
 ## X-WoWI-ID: 17474
+## X-Wago-ID: RaN0nvKj
 
 embeds.xml
 

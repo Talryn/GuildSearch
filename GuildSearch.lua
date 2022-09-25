@@ -47,12 +47,24 @@ local function cleanupVersion(version)
 	return version
 end
 
+local function versionInRange(version, start, finish)
+	if _G.type(version) ~= "number" then return false end
+	local start = start or 0
+	local finish = finish or 100000000
+	if _G.type(start) ~= "number" or _G.type(finish) ~= "number" then return false end
+	return version >= start and version < finish
+end
+
 addon.addonTitle = _G.GetAddOnMetadata(ADDON_NAME,"Title")
 addon.addonVersion = cleanupVersion("@project-version@")
 
 addon.CURRENT_BUILD, addon.CURRENT_INTERNAL,
   addon.CURRENT_BUILD_DATE, addon.CURRENT_UI_VERSION = _G.GetBuildInfo()
 addon.Classic = addon.CURRENT_UI_VERSION < 20000
+addon.TBC = versionInRange(addon.CURRENT_UI_VERSION, 20000, 30000)
+addon.Wrath = versionInRange(addon.CURRENT_UI_VERSION, 30000, 40000)
+
+addon.useOldGuildFrame = addon.Classic or addon.TBC or addon.Wrath
 
 local GREEN = "|cff00ff00"
 local YELLOW = "|cffffff00"
@@ -1486,7 +1498,7 @@ function GuildSearch:CreateMemberDetailsFrame()
 end
 
 function GuildSearch:DefaultUI_DisplayGuildMember(index)
-	if addon.Classic and _G.FriendsFrame then
+	if addon.useOldGuildFrame and _G.FriendsFrame then
 		_G.SetGuildRosterSelection(index or 0)
 		if not _G.FriendsFrame:IsShown() then
 			_G.ToggleFriendsFrame(3)

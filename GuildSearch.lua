@@ -1513,7 +1513,7 @@ function GuildSearch:DefaultUI_DisplayGuildMember(index)
 			return
 		end
 		-- Verify the methods exist.
-		if not (_G.GuildRoster_SetView and _G.GuildRoster_Update and _G.SetGuildRosterSelection and 		_G.GuildFrame_Toggle) then
+		if not (_G.GuildRoster_SetView and _G.GuildRoster_Update and _G.SetGuildRosterSelection and _G.GuildFrame_Toggle) then
 			self:Print("Could not find guild functions!")
 			return
 		end

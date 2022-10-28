@@ -571,7 +571,7 @@ function GuildSearch:OnInitialize()
 		icon = "Interface\\Icons\\INV_Scroll_03.blp",
 		OnClick = function(clickedframe, button)
 			if button == "RightButton" then
-				local optionsFrame = _G.InterfaceOptionsFrame
+				local optionsFrame = self.optionsFrame
 
 				if optionsFrame:IsVisible() then
 					optionsFrame:Hide()
@@ -586,7 +586,7 @@ function GuildSearch:OnInitialize()
 					self:HideGuildWindow()
 				else
 					if self:CombatCheck() then return end
-					local optionsFrame = _G.InterfaceOptionsFrame
+					local optionsFrame = self.optionsFrame
 					optionsFrame:Hide()
 					self:GuildSearchHandler("")
 				end

@@ -102,6 +102,27 @@ function addon.setGuildSource()
 	addon.guildSource = LibAlts and addon.guildName and LibAlts.GUILD_PREFIX..addon.guildName or ""
 end
 
+function addon.IsGameOptionsVisible()
+	local optionsFrame = _G.SettingsPanel or _G.InterfaceOptionsFrame
+    return optionsFrame and optionsFrame:IsVisible() or false
+end
+
+function addon.ShowGameOptions()
+	local optionsFrame = _G.SettingsPanel or _G.InterfaceOptionsFrame
+    optionsFrame:Show()
+end
+
+function addon.HideGameOptions()
+	local optionsFrame = _G.SettingsPanel or _G.InterfaceOptionsFrame
+	if _G.SettingsPanel then
+		if not _G.UnitAffectingCombat("player") then
+			_G.HideUIPanel(optionsFrame)
+		end
+	else
+		optionsFrame:Hide()
+	end
+end
+
 local ColumnWidths = {
 	["default"] = {
 		window = 700,
@@ -546,6 +567,16 @@ function GuildSearch:CombatCheck()
 	return false
 end
 
+function GuildSearch:ShowOptions()
+	if Settings and Settings.OpenToCategory and 
+		_G.type(Settings.OpenToCategory) == "function" then
+		Settings.OpenToCategory(addon.addonTitle)
+	else
+		_G.InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
+		_G.InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
+	end
+end
+
 function GuildSearch:OnInitialize()
 	-- Called when the addon is loaded
 	self.db = _G.LibStub("AceDB-3.0"):New("GuildSearchDB", defaults, "Default")
@@ -553,9 +584,10 @@ function GuildSearch:OnInitialize()
 	self.optionalColumn = self.db.profile.optionalColumn
 
 	-- Register the options table
-	_G.LibStub("AceConfig-3.0"):RegisterOptionsTable("GuildSearch", self:GetOptions())
+	local displayName = addon.addonTitle
+	_G.LibStub("AceConfig-3.0"):RegisterOptionsTable(displayName, self:GetOptions())
 	self.optionsFrame = _G.LibStub("AceConfigDialog-3.0"):AddToBlizOptions(
-		"GuildSearch", "Guild Search")
+		displayName, displayName)
 
 	-- Create the guild frame
 	guildFrame = self:CreateGuildFrame()
@@ -571,23 +603,19 @@ function GuildSearch:OnInitialize()
 		icon = "Interface\\Icons\\INV_Scroll_03.blp",
 		OnClick = function(clickedframe, button)
 			if button == "RightButton" then
-				local optionsFrame = self.optionsFrame
-
-				if optionsFrame:IsVisible() then
-					optionsFrame:Hide()
+				if addon.IsGameOptionsVisible() then
+					addon.HideGameOptions()
 				else
 					self:HideGuildWindow()
 					if self:CombatCheck() then return end
-					_G.InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
-					_G.InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
+					self:ShowOptions()
 				end
 			elseif button == "LeftButton" then
 				if self:IsWindowVisible() then
 					self:HideGuildWindow()
 				else
 					if self:CombatCheck() then return end
-					local optionsFrame = self.optionsFrame
-					optionsFrame:Hide()
+					addon.HideGameOptions()
 					self:GuildSearchHandler("")
 				end
 			end

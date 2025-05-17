@@ -1,4 +1,5 @@
-local _G = getfenv(0)
+local ADDON_NAME, addon = ...
+local ADDON_VERSION = "@project-version@"
 
 -- Local versions for performance
 local tinsert = table.insert
@@ -13,9 +14,6 @@ local L = _G.LibStub("AceLocale-3.0"):GetLocale("GuildSearch", true)
 local AGU = _G.LibStub("AceGUI-3.0")
 local LDB = _G.LibStub("LibDataBroker-1.1")
 local icon = _G.LibStub("LibDBIcon-1.0")
-
-local ADDON_NAME, addon = ...
-local ADDON_VERSION = "@project-version@"
 
 addon.addonName = "Guild Search"
 addon.updateDelay = 2

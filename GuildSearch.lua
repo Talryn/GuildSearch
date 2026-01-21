@@ -576,7 +576,7 @@ end
 function GuildSearch:ShowOptions()
     if Settings and Settings.OpenToCategory and
         _G.type(Settings.OpenToCategory) == "function" then
-        Settings.OpenToCategory(addon.addonTitle)
+        Settings.OpenToCategory(self.optionsCategoryId)
     else
         _G.InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
         _G.InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
@@ -592,7 +592,7 @@ function GuildSearch:OnInitialize()
     -- Register the options table
     local displayName = addon.addonTitle
     _G.LibStub("AceConfig-3.0"):RegisterOptionsTable(displayName, self:GetOptions())
-    self.optionsFrame = _G.LibStub("AceConfigDialog-3.0"):AddToBlizOptions(
+    self.optionsFrame, self.optionsCategoryId = _G.LibStub("AceConfigDialog-3.0"):AddToBlizOptions(
         displayName, displayName)
 
     -- Create the guild frame
